@@ -1,0 +1,331 @@
+/* ============================= */
+/* TOKENS вЂ” Reference             */
+/* ============================= */
+
+/*
+ * Layout primitives follow the Every Layout methodology.
+ * Consumers should use border-box sizing consistently.
+ * Long prose URLs need overflow-wrap; preformatted code and tables need
+ * their own overflow containers. Layout primitives do not rewrite content.
+ * https://every-layout.dev
+ */
+
+:root {
+  /* Spacing: fixed small steps and fluid larger steps over 20remвЂ“80rem.
+   * Fluid endpoints assume a 16px root; rem units respect user font settings.
+   */
+  --space-2xs: 0.25rem;
+  --space-xs: 0.5rem;
+  --space-sm: 0.75rem;
+  --space-md: clamp(1rem, 0.916667rem + 0.416667vw, 1.25rem);
+  --space-lg: clamp(1.5rem, 1.333333rem + 0.833333vw, 2rem);
+  --space-xl: clamp(2rem, 1.666667rem + 1.666667vw, 3rem);
+  --space-2xl: clamp(3rem, 2.666667rem + 1.666667vw, 4rem);
+
+  /* Containers: modest gutters; constrain reading width independently. */
+  --gutter: var(--space-lg);
+  --content-max: 80rem;
+  --measure: 65ch;
+  --page-margin: clamp(1rem, 0.666667rem + 1.666667vw, 2rem);
+
+  /* Fixed radius scale. */
+  --radius-xs: 0.25rem;
+  --radius-sm: 0.5rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.5rem;
+  --radius-pill: 999px;
+
+  /* Fluid type over the same 20remвЂ“80rem interval. */
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: clamp(1rem, 0.958333rem + 0.208333vw, 1.125rem);
+  --text-md: clamp(1.125rem, 1.083333rem + 0.208333vw, 1.25rem);
+  --text-lg: clamp(1.25rem, 1.166667rem + 0.416667vw, 1.5rem);
+  --text-xl: clamp(1.5rem, 1.416667rem + 0.416667vw, 1.75rem);
+  --text-2xl: clamp(1.75rem, 1.666667rem + 0.416667vw, 2rem);
+  --text-3xl: clamp(2rem, 1.833333rem + 0.833333vw, 2.5rem);
+  --text-4xl: clamp(2.5rem, 2.333333rem + 0.833333vw, 3rem);
+  --text-5xl: clamp(3rem, 2.833333rem + 0.833333vw, 3.5rem);
+}
+
+/* ============================= */
+/* EVERY LAYOUT PRIMITIVES       */
+/* https://every-layout.dev      */
+/* ============================= */
+
+/*
+ * STACK
+ * Adds vertical spacing between adjacent children.
+ * Use for forms, articles, cards, and page sections.
+ * Custom property: --stack-space
+ */
+.stack > * {
+  margin-block: 0;
+}
+
+.stack > * + * {
+  margin-block-start: var(--stack-space, var(--space-md));
+}
+
+.stack--space-xs {
+  --stack-space: var(--space-xs);
+}
+
+.stack--space-sm {
+  --stack-space: var(--space-sm);
+}
+
+.stack--space-md {
+  --stack-space: var(--space-md);
+}
+
+.stack--space-lg {
+  --stack-space: var(--space-lg);
+}
+
+/*
+ * BOX
+ * Adds padding around content.
+ * Use for cards, panels, and widgets.
+ * Custom property: --box-padding
+ */
+.box {
+  padding: var(--box-padding, var(--space-md));
+}
+
+/*
+ * CENTER
+ * Centers a container, limits its width, and adds inline padding.
+ * Use for page containers and readable text columns.
+ * Custom properties: --center-max, --page-margin
+ * Modifier: .center--normal constrains the container to a readable measure.
+ */
+.center {
+  box-sizing: border-box;
+  width: min(var(--center-max, var(--content-max)), 100%);
+  margin-inline: auto;
+  padding-inline: var(--page-margin);
+}
+
+/*
+ * Normal: readable content width plus the shared inline gutters.
+ * The measure excludes padding because the container uses border-box sizing.
+ */
+.center--normal {
+  --center-max: calc(var(--measure) + 2 * var(--page-margin));
+}
+
+/*
+ * CLUSTER
+ * Arranges items horizontally with wrapping and equal gaps on both axes.
+ * Use for buttons, icons, navigation links, and tags.
+ * Custom property: --cluster-space
+ */
+.cluster {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--cluster-space, var(--space-sm));
+  align-items: center;
+}
+
+.cluster--space-0 {
+  --cluster-space: 0;
+}
+
+.cluster--space-sm {
+  --cluster-space: var(--space-sm);
+}
+
+.cluster--space-md {
+  --cluster-space: var(--space-md);
+}
+
+.cluster--space-lg {
+  --cluster-space: var(--space-lg);
+}
+
+.cluster--space-xl {
+  --cluster-space: var(--space-xl);
+}
+
+.cluster--align-center {
+  align-items: center;
+}
+
+.cluster--align-start {
+  align-items: flex-start;
+}
+
+.cluster--justify-between {
+  justify-content: space-between;
+}
+
+/*
+ * SIDEBAR
+ * Places a narrow sidebar beside flexible main content.
+ * Wraps into a vertical stack when available space is insufficient.
+ * Use for navigation and content, or media and text.
+ * Custom properties: --sidebar-gap, --sidebar-width, --sidebar-min
+ */
+.sidebar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sidebar-gap, var(--gutter));
+}
+
+.sidebar > * {
+  min-inline-size: 0;
+}
+
+.sidebar > :first-child {
+  flex-basis: var(--sidebar-width, 18rem);
+  flex-grow: 1;
+}
+
+.sidebar > :last-child {
+  flex-basis: 0;
+  flex-grow: 999;
+  min-width: var(--sidebar-min, 50%);
+}
+
+/*
+ * SWITCHER
+ * Switches equal-width children between a row and a vertical stack.
+ * Use for comparisons, process steps, and feature sections.
+ * Custom properties: --switcher-space, --switcher-threshold
+ */
+.switcher {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--switcher-space, var(--gutter));
+}
+
+.switcher > * {
+  min-inline-size: 0;
+  flex-grow: 1;
+  flex-basis: calc((var(--switcher-threshold, 40rem) - 100%) * 999);
+}
+
+/*
+ * GRID
+ * Creates responsive columns based on available space without media queries.
+ * Use for cards, galleries, and item lists.
+ * Custom properties: --grid-gap, --grid-min
+ */
+.grid {
+  display: grid;
+  gap: var(--grid-gap, var(--gutter));
+  grid-template-columns: repeat(auto-fit, minmax(min(var(--grid-min, 15rem), 100%), 1fr));
+}
+
+.grid--gap-md {
+  --grid-gap: var(--space-md);
+}
+
+.grid--min-15rem {
+  --grid-min: 15rem;
+}
+
+.grid--align-start {
+  align-items: start;
+}
+
+.grid > * {
+  min-inline-size: 0;
+}
+
+/*
+ * COVER
+ * Fills a minimum height and vertically centers .cover__centered.
+ * Keeps the first and last children at the outer edges.
+ * Use for hero sections and full-screen content.
+ * Custom properties: --cover-min-height, --cover-padding
+ */
+.cover {
+  display: flex;
+  flex-direction: column;
+  min-height: var(--cover-min-height, 100vh);
+  padding: var(--cover-padding, var(--space-md));
+}
+
+.cover > * {
+  margin-block: var(--space-md);
+}
+
+.cover > :first-child:not(.cover__centered) {
+  margin-block-start: 0;
+}
+.cover > :last-child:not(.cover__centered) {
+  margin-block-end: 0;
+}
+.cover > .cover__centered {
+  margin-block: auto;
+}
+
+/*
+ * FRAME
+ * Preserves an aspect ratio and fills it with an image or video.
+ * Use for thumbnails, covers, and media cards.
+ * Custom property: --frame-ratio (for example, 4/3, 1/1, or 16/9)
+ */
+.frame {
+  aspect-ratio: var(--frame-ratio, 16 / 9);
+  overflow: hidden;
+}
+
+.frame > img,
+.frame > video {
+  inline-size: 100%;
+  block-size: 100%;
+  object-fit: cover;
+}
+
+/*
+ * REEL
+ * Creates a horizontally scrollable row with consistent spacing.
+ * Children retain their natural widths.
+ * Use for galleries and horizontally scrolling lists.
+ * Custom property: --reel-space
+ */
+.reel {
+  display: flex;
+  gap: var(--reel-space, var(--gutter));
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.reel > * {
+  flex-shrink: 0;
+}
+
+/*
+ * IMPOSTER
+ * Centers an element within its containing block regardless of dimensions.
+ * Use for overlays, dialogs, and floating content.
+ * Custom property: --imposter-position (absolute or fixed)
+ */
+.imposter {
+  position: var(--imposter-position, absolute);
+  inset-block-start: 50%;
+  inset-inline-start: 50%;
+  transform: translate(-50%, -50%);
+}
+
+/*
+ * ICON
+ * Aligns an icon and text with a consistent gap.
+ * SVG dimensions scale relative to the font size (1em).
+ * Custom properties: --icon-space, --icon-size
+ */
+.icon {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--icon-space, 0.5em);
+}
+
+.icon > svg {
+  flex-shrink: 0;
+  width: var(--icon-size, 1em);
+  height: var(--icon-size, 1em);
+}
