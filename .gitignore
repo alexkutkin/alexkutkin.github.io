@@ -1,0 +1,6 @@
+/.scratch/
+
+node_modules/
+dist/
+.astro/
+artifacts/
