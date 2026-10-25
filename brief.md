@@ -39,7 +39,7 @@
 ## Главная и контакты
 
 - Контакты: [Telegram @alxt](https://t.me/alxt), почта [hi@alexkutkin.com](mailto:hi@alexkutkin.com), [GitHub](https://github.com/alexkutkin), [X](https://x.com/alex_kutkin).
-- Иконки — из набора Lucide.
+- Иконки — локальные SVG в `src/icons`: Lucide (`monitor`, `sun`, `moon`, `mail`, `arrow-left`), Simple Icons (`telegram`, `github`, `x`); цвет через `currentColor`, один набор для светлой и тёмной тем.
 - Репозитории проектов: [paste-hatch](https://github.com/alexkutkin/paste-hatch) и [herdr-tray](https://github.com/alexkutkin/herdr-tray); ссылки на них выводятся независимо от видимости репозиториев.
 - Портрет на главной — реальное квадратное фото: [`src/assets/portrait.jpg`](./src/assets/portrait.jpg).
 
