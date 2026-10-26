@@ -40,16 +40,18 @@ const isHomePage =
           {t.nav.cv}
         </a>
       </nav>
-      {
-        showLanguageSwitch && (
-          <>
-            <span class="utilities-separator" aria-hidden="true"></span>
-            <LanguageSwitch lang={lang} pathname={pathname} label={t.a11y.language} />
-          </>
-        )
-      }
       <span class="utilities-separator" aria-hidden="true"></span>
-      <ThemeSwitch labels={t.theme} label={t.a11y.theme} />
+      <div class="site-header__preferences">
+        {
+          showLanguageSwitch && (
+            <>
+              <LanguageSwitch lang={lang} pathname={pathname} label={t.a11y.language} />
+              <span class="utilities-separator" aria-hidden="true"></span>
+            </>
+          )
+        }
+        <ThemeSwitch labels={t.theme} label={t.a11y.theme} />
+      </div>
     </div>
   </div>
 </header>

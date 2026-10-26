@@ -43,10 +43,10 @@ export const en = {
     ],
     photoAlt: "Portrait of Alex Kutkin",
     photoCaption: "No Wi-Fi",
-    projectsLabel: "Small personal projects",
+    projectsLabel: "Personal projects",
     contactLabel: "Contact",
     contactIntro: "Feel free to get in touch about a project or just to say hello.",
-    socialsLabel: "Social",
+    socialsLabel: "Profiles",
     notesTitle: "Notes",
     telegram: "Telegram",
     projects: [

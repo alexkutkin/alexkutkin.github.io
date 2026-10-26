@@ -16,6 +16,11 @@ Start the development server:
 npm run dev
 ```
 
+The development server listens on the local network at port 4321. To view it
+on a phone connected to the same Wi-Fi network, open
+`http://<computer-LAN-IP>:4321/ru/` (or `/en/`). Use the computer's LAN IPv4
+address, not `localhost`.
+
 Build the static site into `dist/`:
 
 ```sh
@@ -40,3 +45,9 @@ Check the normal build for accidental test content:
 npm run build
 node scripts/verify-public-content.mjs
 ```
+
+For iPhone layout checks, `scripts/verify-mobile.cjs` runs in the existing
+Playwright container with WebKit installed. It checks both languages and themes
+at 320, 375, 390 and 430 CSS pixels, including the header, portrait spacing,
+language switching, CV and article. These are browser/device emulation checks,
+not tests on a physical iPhone.

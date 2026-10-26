@@ -126,6 +126,13 @@ p {
   background: var(--color-border);
 }
 
+.site-header__preferences {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  margin-inline-start: auto;
+}
+
 .site-nav {
   display: flex;
   align-items: center;
@@ -244,7 +251,11 @@ p {
 
   .site-header__utilities {
     inline-size: 100%;
-    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: var(--space-sm);
+  }
+
+  .site-header__preferences {
     gap: var(--space-sm);
   }
 

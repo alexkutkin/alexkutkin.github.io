@@ -2,6 +2,10 @@ import { defineConfig } from "astro/config";
 
 export default defineConfig({
   site: "https://alexkutkin.github.io",
+  server: {
+    host: true,
+    port: 4321,
+  },
   trailingSlash: "always",
   i18n: {
     defaultLocale: "en",

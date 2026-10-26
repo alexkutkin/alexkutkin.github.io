@@ -141,6 +141,18 @@ async function runSite({ browser, baseUrl, artifactDir, report }) {
   const check = (name, passed, detail) => {
     checks.push({ name, passed: Boolean(passed), detail });
   };
+  const checkContactSizing = async (target, label) => {
+    const links = await target.locator(".home-contacts a").evaluateAll((anchors) => anchors.map((anchor) => ({
+      fontSize: getComputedStyle(anchor).fontSize,
+      iconWidth: anchor.querySelector("svg").getBoundingClientRect().width,
+      width: anchor.getBoundingClientRect().width,
+      height: anchor.getBoundingClientRect().height,
+    })));
+    check(`${label} uses equal text and icon sizes for contacts and profiles`, links.length === 4 && links.every((link) => link.fontSize === links[0].fontSize && link.iconWidth === links[0].iconWidth), JSON.stringify(links));
+    check(`${label} gives every contact and profile a target of at least 24px`, links.length === 4 && links.every((link) => link.width >= 24 && link.height >= 24), JSON.stringify(links));
+    const introductions = await target.locator(".contact-group").evaluateAll((groups) => groups.map((group) => group.querySelectorAll(".contact-intro").length));
+    check(`${label} keeps the introduction only with direct contacts`, introductions.join(",") === "1,0", JSON.stringify(introductions));
+  };
   const checkAsync = async (name, fn) => {
     try {
       const detail = await fn();
@@ -268,7 +280,7 @@ async function runSite({ browser, baseUrl, artifactDir, report }) {
     const navLabel = { en: "Home", ru: "Главная" };
     const footerSite = { en: "Personal site", ru: "Личный сайт" };
     const cvExpectations = {
-      en: ["Experience", "Lead Developer", "MTS", "December 2022 — May 2024", "Education", "professional retraining in software development, 2015", "Novosibirsk State Technical University", "What I've worked with", "JavaScript, TypeScript and React", "C#, .NET and Node.js", "Languages", "English — B2"],
+      en: ["Experience", "Lead Developer", "MTS", "December 2022 — May 2024", "Education", "professional retraining in software development, 2015", "Novosibirsk State Technical University", "What I’ve worked with", "JavaScript, TypeScript and React", "C#, .NET and Node.js", "Languages", "English — B2"],
       ru: ["Опыт", "ведущий разработчик", "МТС", "Декабрь 2022 — май 2024", "Образование", "НГТУ — профессиональная переподготовка в области программирования, 2015", "С чем работал", "JavaScript, TypeScript и React", "C#, .NET и Node.js", "Языки", "Английский — B2"],
     };
 
@@ -351,6 +363,10 @@ async function runSite({ browser, baseUrl, artifactDir, report }) {
           check(`${label} exposes the current page to assistive tech`, info.navCurrent.join(",") === expectedCurrent.join(","), JSON.stringify(info.navCurrent));
         }
 
+        if (route.kind === "home" && route.path === `/${route.lang}/`) {
+          await checkContactSizing(page, `${route.lang} desktop home`);
+          check(`${label} shows the localized project and profile labels`, info.mainText.includes(route.lang === "ru" ? "Личные проекты" : "Personal projects") && info.mainText.includes(route.lang === "ru" ? "Профили" : "Profiles"), info.mainText);
+        }
         if (route.kind === "home" && route.path === "/en/") {
           for (const expected of ["https://t.me/alxt", "mailto:hi@alexkutkin.com", "https://github.com/alexkutkin", "https://x.com/alex_kutkin", "https://github.com/alexkutkin/paste-hatch", "https://github.com/alexkutkin/herdr-tray"]) {
             check(`English home links ${expected}`, info.hrefs.includes(expected), expected);
@@ -528,6 +544,7 @@ async function runSite({ browser, baseUrl, artifactDir, report }) {
       innerWidth: window.innerWidth,
     }));
     await mobile.goto(absolute("/en/"), { waitUntil: "domcontentloaded" });
+    await checkContactSizing(mobile, "English mobile home");
     const mobileHome = await overflow(mobile);
     check("Mobile home has no horizontal page overflow", mobileHome.scrollWidth <= mobileHome.innerWidth + 1 && mobileHome.bodyWidth <= mobileHome.innerWidth + 1, JSON.stringify(mobileHome));
     await capture("mobile-home", mobile, { fullPage: true });

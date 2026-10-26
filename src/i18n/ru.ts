@@ -45,10 +45,10 @@ export const ru: Dictionary = {
     ],
     photoAlt: "Портрет Александра Куткина",
     photoCaption: "Без Wi-Fi",
-    projectsLabel: "Небольшие личные проекты",
+    projectsLabel: "Личные проекты",
     contactLabel: "Связь",
     contactIntro: "Можно написать мне по поводу проекта или просто познакомиться.",
-    socialsLabel: "Соцсети",
+    socialsLabel: "Профили",
     notesTitle: "Заметки",
     telegram: "Telegram",
     projects: [
