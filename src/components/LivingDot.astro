@@ -27,28 +27,31 @@
     fill: var(--color-bg);
     transform-box: fill-box;
     transform-origin: center;
-    transform: scaleY(0);
     transition: transform 140ms ease-out;
   }
   .living-dot__pupil {
     fill: var(--color-accent);
-    transform: scale(0);
     transform-box: fill-box;
     transform-origin: center;
-    transition: transform 140ms ease-out;
-  }
-  .living-dot[data-state="look"] .living-dot__eye,
-  .living-dot[data-state="left"] .living-dot__eye,
-  .living-dot[data-state="right"] .living-dot__eye {
-    transform: scaleY(1);
-  }
-  .living-dot[data-state="look"] .living-dot__pupil,
-  .living-dot[data-state="left"] .living-dot__pupil,
-  .living-dot[data-state="right"] .living-dot__pupil {
-    transform: scale(1);
+    transition: transform 140ms ease-out, translate 140ms ease-out;
   }
   .living-dot[data-state="left"] .living-dot__pupil { translate: -3px 0; }
   .living-dot[data-state="right"] .living-dot__pupil { translate: 2px 0; }
+
+  .living-dot[data-blink] .living-dot__eye {
+    transform: scaleY(0.04);
+    transition-duration: 70ms;
+  }
+  .living-dot[data-blink] .living-dot__pupil {
+    transform: scale(0);
+    transition-duration: 70ms;
+  }
+  .living-dot[data-blink="half"] .living-dot__eye {
+    transform: scaleY(0.45);
+  }
+  .living-dot[data-blink="half"] .living-dot__pupil {
+    transform: scale(0.75);
+  }
 
   @media (prefers-reduced-motion: reduce) {
     .living-dot__eye, .living-dot__pupil { transition: none; }
@@ -60,46 +63,102 @@
   const dot = document.querySelector<HTMLElement>("[data-living-dot]");
   const brand = dot?.closest<HTMLAnchorElement>(".brand");
   if (dot && brand) {
-    let idleTimer: number | undefined;
-    let hideTimer: number | undefined;
-    let sequenceTimer: number | undefined;
-    let hovered = false;
+    let hovering = false;
+    let greeted = false;
+    let blinkTimer: number | undefined;
+    let blinkOffTimer: number | undefined;
+    let secondBlinkTimer: number | undefined;
+    let glanceTimer: number | undefined;
+    let glanceRestTimer: number | undefined;
+    let hoverTimer: number | undefined;
+    let greetingTimer: number | undefined;
 
-    const clearSequence = () => {
-      window.clearTimeout(hideTimer);
-      window.clearTimeout(sequenceTimer);
+    const clearTimers = () => {
+      window.clearTimeout(blinkTimer);
+      window.clearTimeout(blinkOffTimer);
+      window.clearTimeout(secondBlinkTimer);
+      window.clearTimeout(glanceTimer);
+      window.clearTimeout(glanceRestTimer);
+      window.clearTimeout(hoverTimer);
+      window.clearTimeout(greetingTimer);
     };
-    const rest = () => { dot.dataset.state = "rest"; };
-    const peek = (direction: "look" | "left" | "right") => {
-      dot.dataset.state = direction;
+
+    const open = () => {
+      delete dot.dataset.blink;
+      dot.dataset.state = "look";
     };
-    const schedule = () => {
-      window.clearTimeout(idleTimer);
-      if (motion.matches || document.hidden || hovered) return;
-      idleTimer = window.setTimeout(() => {
-        peek(Math.random() < 0.5 ? "left" : "right");
-        hideTimer = window.setTimeout(() => {
-          rest();
-          schedule();
-        }, 650);
-      }, 15000 + Math.random() * 10000);
+
+    const blink = () => {
+      delete dot.dataset.blink;
+      // Force a frame so two quick blinks are two separate transitions.
+      void dot.offsetWidth;
+      const half = Math.random() < 0.12;
+      dot.dataset.blink = half ? "half" : "";
+      blinkOffTimer = window.setTimeout(() => {
+        delete dot.dataset.blink;
+      }, half ? 170 : 110);
     };
+
+    const scheduleBlink = () => {
+      window.clearTimeout(blinkTimer);
+      if (motion.matches || document.hidden || hovering) return;
+      blinkTimer = window.setTimeout(() => {
+        blink();
+        if (Math.random() < 0.25) {
+          secondBlinkTimer = window.setTimeout(blink, 280);
+        }
+        scheduleBlink();
+      }, 3500 + Math.random() * 3000);
+    };
+
+    const scheduleGlance = () => {
+      window.clearTimeout(glanceTimer);
+      if (motion.matches || document.hidden || hovering) return;
+      glanceTimer = window.setTimeout(() => {
+        dot.dataset.state = Math.random() < 0.5 ? "left" : "right";
+        glanceRestTimer = window.setTimeout(() => {
+          open();
+          scheduleGlance();
+        }, 900);
+      }, 20000 + Math.random() * 20000);
+    };
+
+    const greet = () => {
+      if (greeted || motion.matches || document.hidden) return;
+      greeted = true;
+      greetingTimer = window.setTimeout(() => {
+        if (hovering) return;
+        dot.dataset.state = Math.random() < 0.5 ? "left" : "right";
+        glanceRestTimer = window.setTimeout(open, 900);
+      }, 1800);
+    };
+
+    const resume = () => {
+      open();
+      greet();
+      scheduleBlink();
+      scheduleGlance();
+    };
+
     const engage = () => {
       if (motion.matches) return;
-      hovered = true;
-      clearSequence();
-      window.clearTimeout(idleTimer);
-      peek("look");
-      sequenceTimer = window.setTimeout(() => {
-        if (hovered) peek("left");
+      hovering = true;
+      clearTimers();
+      open();
+      hoverTimer = window.setTimeout(() => {
+        if (hovering) dot.dataset.state = "left";
       }, 550);
     };
+
     const disengage = () => {
-      hovered = false;
-      clearSequence();
-      if (motion.matches) { rest(); return; }
-      peek("right");
-      hideTimer = window.setTimeout(() => { rest(); schedule(); }, 500);
+      hovering = false;
+      clearTimers();
+      if (motion.matches) { open(); return; }
+      dot.dataset.state = "right";
+      glanceRestTimer = window.setTimeout(() => {
+        open();
+        resume();
+      }, 500);
     };
 
     brand.addEventListener("pointerenter", engage);
@@ -107,17 +166,16 @@
     brand.addEventListener("focus", engage);
     brand.addEventListener("blur", disengage);
     document.addEventListener("visibilitychange", () => {
-      clearSequence();
-      window.clearTimeout(idleTimer);
-      rest();
-      if (!document.hidden) schedule();
+      clearTimers();
+      if (document.hidden) return;
+      hovering = false;
+      resume();
     });
     motion.addEventListener("change", () => {
-      clearSequence();
-      window.clearTimeout(idleTimer);
-      rest();
-      schedule();
+      clearTimers();
+      if (motion.matches) { open(); return; }
+      resume();
     });
-    schedule();
+    resume();
   }
 </script>
