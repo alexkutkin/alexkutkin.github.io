@@ -1,0 +1,26 @@
+---
+import type { Dictionary, Locale } from "../i18n";
+
+interface Props {
+  title: string;
+  description: string;
+  date: Date;
+  href: string;
+  lang: Locale;
+  t: Dictionary;
+}
+
+const { title, description, date, href, lang, t } = Astro.props;
+const isoDate = date.toISOString().slice(0, 10);
+---
+
+<li class="note">
+  <time class="note__date" datetime={isoDate} data-format-date data-locale={lang}>
+    {isoDate}
+  </time>
+  <h3 class="note__title">
+    <a href={href}>{title}</a>
+  </h3>
+  <p class="note__summary">{description}</p>
+  <a class="note__cta" href={href}>{t.article.open}</a>
+</li>

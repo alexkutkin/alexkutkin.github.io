@@ -1,0 +1,54 @@
+---
+import LanguageSwitch from "./LanguageSwitch.astro";
+import ThemeSwitch from "./ThemeSwitch.astro";
+import type { Dictionary, Locale } from "../i18n";
+
+interface Props {
+  lang: Locale;
+  section: "home" | "cv" | "none";
+  pathname: string;
+  t: Dictionary;
+  showLanguageSwitch?: boolean;
+}
+
+const { lang, section, pathname, t, showLanguageSwitch = true } = Astro.props;
+const isHomePage =
+  section === "home" && new RegExp(`^/${lang}/(?:\\d+/)?$`).test(pathname);
+---
+
+<header class="site-header center">
+  <div class="site-header__row">
+    <a class="brand" href={`/${lang}/`}>
+      <span class="brand__dot" aria-hidden="true"></span>
+      <span>{t.authorName}</span>
+    </a>
+    <div class="site-header__utilities">
+      <nav class="site-nav" aria-label={t.a11y.mainNav}>
+        <a
+          class:list={["site-nav__link", { "is-active": section === "home" }]}
+          href={`/${lang}/`}
+          aria-current={isHomePage ? "page" : undefined}
+        >
+          {t.nav.home}
+        </a>
+        <a
+          class:list={["site-nav__link", { "is-active": section === "cv" }]}
+          href={`/${lang}/cv/`}
+          aria-current={section === "cv" ? "page" : undefined}
+        >
+          {t.nav.cv}
+        </a>
+      </nav>
+      {
+        showLanguageSwitch && (
+          <>
+            <span class="utilities-separator" aria-hidden="true"></span>
+            <LanguageSwitch lang={lang} pathname={pathname} label={t.a11y.language} />
+          </>
+        )
+      }
+      <span class="utilities-separator" aria-hidden="true"></span>
+      <ThemeSwitch labels={t.theme} label={t.a11y.theme} />
+    </div>
+  </div>
+</header>

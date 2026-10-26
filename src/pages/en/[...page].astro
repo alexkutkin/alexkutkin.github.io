@@ -1,0 +1,14 @@
+---
+import HomeView from "../../components/HomeView.astro";
+import { getDictionary } from "../../i18n";
+import { getArticles } from "../../lib/articles";
+
+export async function getStaticPaths({ paginate }) {
+  return paginate(await getArticles("en"), { pageSize: 10 });
+}
+
+const { page } = Astro.props;
+const t = getDictionary("en");
+---
+
+<HomeView page={page} lang="en" t={t} />

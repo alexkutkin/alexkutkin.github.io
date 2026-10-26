@@ -1,0 +1,15 @@
+---
+import arrowLeft from "../icons/arrow-left.svg?raw";
+import github from "../icons/github.svg?raw";
+import mail from "../icons/mail.svg?raw";
+import monitor from "../icons/monitor.svg?raw";
+import moon from "../icons/moon.svg?raw";
+import sun from "../icons/sun.svg?raw";
+import telegram from "../icons/telegram.svg?raw";
+import x from "../icons/x.svg?raw";
+
+const icons = { arrowLeft, github, mail, monitor, moon, sun, telegram, x };
+const { name } = Astro.props as { name: keyof typeof icons };
+---
+
+<span class="icon" aria-hidden="true" set:html={icons[name]} />

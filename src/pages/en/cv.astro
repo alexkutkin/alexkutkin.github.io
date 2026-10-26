@@ -1,0 +1,11 @@
+---
+import { getEntry } from "astro:content";
+import CvView from "../../components/CvView.astro";
+import { getDictionary } from "../../i18n";
+
+const entry = await getEntry("cv", "en");
+if (!entry) throw new Error('Missing CV content for locale "en"');
+const t = getDictionary("en");
+---
+
+<CvView entry={entry} lang="en" t={t} />

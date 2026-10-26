@@ -1,0 +1,18 @@
+---
+import ArticleView from "../../../components/ArticleView.astro";
+import { getDictionary } from "../../../i18n";
+import { articleSlug, getArticles } from "../../../lib/articles";
+
+export async function getStaticPaths() {
+  const entries = await getArticles("en");
+  return entries.map((entry) => ({
+    params: { slug: articleSlug(entry) },
+    props: { entry },
+  }));
+}
+
+const { entry } = Astro.props;
+const t = getDictionary("en");
+---
+
+<ArticleView entry={entry} lang="en" t={t} />

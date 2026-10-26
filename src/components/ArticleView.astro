@@ -1,0 +1,151 @@
+---
+import { Image } from "astro:assets";
+import { render, type CollectionEntry } from "astro:content";
+import BaseLayout from "../layouts/BaseLayout.astro";
+import Icon from "./Icon.astro";
+import type { Dictionary, Locale } from "../i18n";
+import "../styles/article.css";
+
+interface Props {
+  entry: CollectionEntry<"articles">;
+  lang: Locale;
+  t: Dictionary;
+}
+
+const { entry, lang, t } = Astro.props;
+const { Content } = await render(entry);
+const isoDate = entry.data.date.toISOString().slice(0, 10);
+const assets = import.meta.glob("../assets/*.{jpg,jpeg,png,webp}", {
+  eager: true,
+  import: "default",
+});
+const figure = entry.data.image
+  ? assets[`../assets/${entry.data.image}`]
+  : undefined;
+const title = `${entry.data.title} — ${t.authorName}`;
+---
+
+<BaseLayout lang={lang} title={title} description={entry.data.description} section="home">
+  <article class="article">
+    <a class="article__back" href={`/${lang}/`}>
+      <Icon name="arrowLeft" />
+      <span>{t.article.backHome}</span>
+    </a>
+
+    <header class="article__header">
+      <time class="article__date" datetime={isoDate} data-format-date data-locale={lang}>
+        {isoDate}
+      </time>
+      <h1 class="article__title">{entry.data.title}</h1>
+      <p class="article__lead">{entry.data.description}</p>
+    </header>
+
+    <div class="article__body prose">
+      {
+        figure && entry.data.imageAlt && (
+          <figure class="article-figure">
+            <Image
+              src={figure}
+              alt={entry.data.imageAlt}
+              widths={[700, 1200]}
+              sizes="(max-width: 768px) calc(100vw - 2rem), 700px"
+              format="webp"
+            />
+            {entry.data.imageCaption && <figcaption>{entry.data.imageCaption}</figcaption>}
+          </figure>
+        )
+      }
+      <Content />
+    </div>
+  </article>
+</BaseLayout>
+
+<script>
+  const blocks = Array.from(
+    document.querySelectorAll('pre[data-language="mermaid"]'),
+  );
+
+  if (blocks.length) {
+    const { default: mermaid } = await import("mermaid");
+    const cssValue = (name) =>
+      getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+    const configure = () => {
+      mermaid.initialize({
+        startOnLoad: false,
+        securityLevel: "strict",
+        suppressErrorRendering: true,
+        theme: "base",
+        fontFamily: cssValue("--font-sans"),
+        themeVariables: {
+          background: cssValue("--color-surface"),
+          primaryColor: cssValue("--color-surface"),
+          primaryTextColor: cssValue("--color-text"),
+          primaryBorderColor: cssValue("--color-border"),
+          secondaryColor: cssValue("--color-card"),
+          tertiaryColor: cssValue("--color-bg"),
+          lineColor: cssValue("--color-muted"),
+          textColor: cssValue("--color-text"),
+          mainBkg: cssValue("--color-surface"),
+          nodeBorder: cssValue("--color-border"),
+          clusterBkg: cssValue("--color-bg"),
+          clusterBorder: cssValue("--color-border"),
+          edgeLabelBackground: cssValue("--color-surface"),
+          labelColor: cssValue("--color-text"),
+          noteBkgColor: cssValue("--color-card"),
+          noteTextColor: cssValue("--color-text"),
+          noteBorderColor: cssValue("--color-border"),
+          actorBkg: cssValue("--color-card"),
+          actorBorder: cssValue("--color-border"),
+          actorTextColor: cssValue("--color-text"),
+          signalColor: cssValue("--color-muted"),
+          signalTextColor: cssValue("--color-text"),
+          labelBoxBkgColor: cssValue("--color-surface"),
+          labelBoxBorderColor: cssValue("--color-border"),
+          labelTextColor: cssValue("--color-text"),
+          loopTextColor: cssValue("--color-text"),
+          activationBorderColor: cssValue("--color-border"),
+          activationBkgColor: cssValue("--color-surface"),
+          sequenceNumberColor: cssValue("--color-text"),
+          titleColor: cssValue("--color-text"),
+        },
+      });
+    };
+
+    let renderCount = 0;
+    const renderInto = async (element, source) => {
+      configure();
+      renderCount += 1;
+      const { svg } = await mermaid.render(
+        `mermaid-diagram-${renderCount}`,
+        source,
+      );
+      element.innerHTML = svg;
+    };
+
+    for (const block of blocks) {
+      const source = block.textContent ?? "";
+      const wrapper = document.createElement("div");
+      wrapper.className = "mermaid-diagram";
+      try {
+        await renderInto(wrapper, source);
+        wrapper.dataset.mermaidSource = source;
+        block.replaceWith(wrapper);
+      } catch (error) {
+        block.dataset.mermaidError = "true";
+      }
+    }
+
+    document.addEventListener("themechange", async () => {
+      const diagrams = Array.from(
+        document.querySelectorAll(".mermaid-diagram[data-mermaid-source]"),
+      );
+      for (const diagram of diagrams) {
+        try {
+          await renderInto(diagram, diagram.dataset.mermaidSource ?? "");
+        } catch (error) {
+          diagram.dataset.mermaidError = "true";
+        }
+      }
+    });
+  }
+</script>
