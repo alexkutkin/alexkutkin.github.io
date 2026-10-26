@@ -39,11 +39,11 @@ async function main() {
             return {
               width: innerWidth,
               scrollWidth: document.documentElement.scrollWidth,
-              utilities: rect(".site-header__utilities"),
-              preferences: rect(".site-header__preferences"),
+              header: rect(".site-header__row"),
+              brand: rect(".brand"),
               navigation: rect(".site-nav"),
               language: rect(".language-switch"),
-              theme: rect(".theme-switch"),
+              theme: rect(".theme-control__toggle"),
               text: rect(".home-hero__text"),
               photo: rect(".home-hero__aside"),
               heroGap: parseFloat(getComputedStyle(hero).rowGap),
@@ -52,18 +52,31 @@ async function main() {
           });
           const label = `${browserName}-${lang}-${width}-${colorScheme}`;
           assert.ok(layout.scrollWidth <= width + 1, `${label}: horizontal overflow`);
-          for (const target of await page.locator(".brand, .site-nav__link, .language-switch__link, .theme-switch__option").all()) {
+          for (const target of await page.locator(".brand, .site-nav__link, .language-switch__link, .theme-control__toggle").all()) {
             const box = await target.boundingBox();
             assert.ok(box.width >= 44 && box.height >= 44, `${label}: header touch target smaller than 44px`);
           }
-          assert.ok(Math.abs(layout.preferences.right - layout.utilities.right) <= 1, `${label}: preferences not aligned right: ${JSON.stringify(layout)}`);
-          assert.ok(Math.abs(layout.navigation.left - layout.utilities.left) <= 1, `${label}: navigation not aligned left`);
-          assert.ok(Math.abs((layout.language.top + layout.language.bottom) - (layout.theme.top + layout.theme.bottom)) <= 2, `${label}: language and theme not grouped on one row`);
-          assert.ok(layout.theme.left - layout.language.right >= 0 && layout.theme.left - layout.language.right <= 20, `${label}: language is separated from theme`);
+          assert.ok(Math.abs(layout.theme.right - layout.header.right) <= 1, `${label}: theme not aligned right`);
+          assert.ok(Math.abs(layout.language.right - layout.header.right) <= 1, `${label}: language not aligned right`);
+          assert.ok(Math.abs(layout.navigation.top - layout.language.top) <= 1, `${label}: navigation and languages not on one row`);
+          assert.ok(layout.header.bottom - layout.header.top <= 100, `${label}: header exceeds two compact rows`);
+          const toggle = page.locator(".theme-control__toggle");
+          await toggle.click();
+          await page.locator('.theme-switch__option:has(input[value="dark"])').click();
+          assert.equal(await toggle.getAttribute("aria-expanded"), "false");
+          assert.equal(await page.evaluate(() => localStorage.getItem("theme")), "dark");
+          await toggle.click();
+          await page.keyboard.press("Escape");
+          assert.equal(await toggle.getAttribute("aria-expanded"), "false");
+          await page.evaluate((scheme) => {
+            localStorage.setItem("theme", scheme);
+            document.documentElement.dataset.theme = scheme;
+          }, colorScheme);
           assert.ok(Math.abs(layout.photo.top - layout.text.bottom - layout.heroGap) <= 1, `${label}: unexpected photo gap`);
           assert.ok(layout.heroGap >= 32 && layout.heroGap <= 40 && layout.sectionGap >= 32 && layout.sectionGap <= 40, `${label}: photo spacing is outside the chosen scale step`);
 
           if (width === 390) {
+            await page.locator(".theme-control__toggle").blur();
             await page.locator(".site-header").screenshot({ path: path.join(artifactDir, `${label}-header.png`) });
             await page.locator(".home-hero").screenshot({ path: path.join(artifactDir, `${label}-hero.png`) });
           }

@@ -10,7 +10,11 @@ interface Props {
 const { labels, label } = Astro.props;
 ---
 
-<fieldset class="theme-switch">
+<div class="theme-control">
+  <button class="theme-control__toggle" type="button" aria-label={label} aria-expanded="false" aria-controls="theme-options">
+    <Icon name="sun" />
+  </button>
+<fieldset class="theme-switch" id="theme-options">
   <legend class="visually-hidden">{label}</legend>
   <label class="theme-switch__option">
     <input class="visually-hidden" type="radio" name="theme" value="system" checked />
@@ -28,3 +32,31 @@ const { labels, label } = Astro.props;
     <span class="visually-hidden">{labels.dark}</span>
   </label>
 </fieldset>
+</div>
+
+<script>
+  const control = document.querySelector<HTMLElement>(".theme-control");
+  const toggle = control?.querySelector<HTMLButtonElement>(".theme-control__toggle");
+  const close = () => toggle?.setAttribute("aria-expanded", "false");
+  toggle?.addEventListener("click", () => {
+    toggle.setAttribute("aria-expanded", String(toggle.getAttribute("aria-expanded") !== "true"));
+  });
+  document.addEventListener("click", (event) => {
+    if (event.target instanceof Node && !control?.contains(event.target)) close();
+  });
+  control?.addEventListener("change", () => {
+    if (toggle?.getAttribute("aria-expanded") === "true") {
+      close();
+      toggle.focus();
+    }
+  });
+  control?.addEventListener("focusout", (event) => {
+    if (event.relatedTarget instanceof Node && !control.contains(event.relatedTarget)) close();
+  });
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && toggle?.getAttribute("aria-expanded") === "true") {
+      close();
+      toggle.focus();
+    }
+  });
+</script>
