@@ -243,8 +243,6 @@ p {
 
 .site-footer__site {
   color: var(--color-muted);
-  font-family: var(--font-mono);
-  font-weight: 400;
 }
 
 @media (max-width: 48rem) {

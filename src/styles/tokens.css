@@ -3,7 +3,7 @@
 
   --font-sans: "Manrope", system-ui, -apple-system, "Segoe UI", sans-serif;
   --font-serif: "Lora", Georgia, "Times New Roman", serif;
-  /* Mono serves only code, dates and utility labels; the system stack saves a third family (~31 KB per page). */
+  /* Mono serves only code; dates and utility labels stay in the sans, so the system stack saves a third family (~31 KB per page). */
   --font-mono: ui-monospace, "SFMono-Regular", Consolas, monospace;
 
   --color-bg: #f7f2e8;

@@ -48,7 +48,7 @@ export const ru: Dictionary = {
     contactLabel: "Связь",
     socialsLabel: "Соцсети",
     notesTitle: "Заметки",
-    telegram: "Написать в Telegram",
+    telegram: "Telegram",
     projects: [
       {
         title: "PasteHatch",
