@@ -255,12 +255,12 @@ async function runSite({ browser, baseUrl, artifactDir, report }) {
 
     const expectedTitles = {
       en: {
-        home: "Alex Kutkin — frontend developer",
+        home: "Alex Kutkin — apps and tools",
         cv: "CV — Alex Kutkin",
         "not-found": "Page not found — Alex Kutkin",
       },
       ru: {
-        home: "Александр Куткин — фронтенд-разработчик",
+        home: "Александр Куткин — приложения и инструменты",
         cv: "Резюме — Александр Куткин",
       },
     };
@@ -268,8 +268,8 @@ async function runSite({ browser, baseUrl, artifactDir, report }) {
     const navLabel = { en: "Home", ru: "Главная" };
     const footerSite = { en: "Personal site", ru: "Личный сайт" };
     const cvExpectations = {
-      en: ["Experience", "Lead frontend developer", "MTS", "Education", "NSTU, 2015", "Novosibirsk State Technical University", "Skills", "JavaScript, TypeScript, React", "Languages", "English — B2"],
-      ru: ["Опыт", "Ведущий фронтенд-разработчик", "МТС", "Образование", "НГТУ, 2015", "Новосибирский государственный технический университет", "Навыки", "JavaScript, TypeScript, React", "Языки", "Английский — B2"],
+      en: ["Experience", "Lead Developer", "MTS", "December 2022 — May 2024", "Education", "professional retraining in software development, 2015", "Novosibirsk State Technical University", "Skills", "JavaScript, TypeScript, React, C#, .NET", "Languages", "English — B2"],
+      ru: ["Опыт", "ведущий разработчик", "МТС", "Декабрь 2022 — май 2024", "Образование", "НГТУ — профессиональная переподготовка в области программирования, 2015", "Навыки", "JavaScript, TypeScript, React, C#, .NET", "Языки", "Английский — B2"],
     };
 
     for (const route of routes) {

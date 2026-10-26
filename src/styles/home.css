@@ -114,6 +114,11 @@
   gap: var(--space-sm);
 }
 
+.contact-intro {
+  margin: 0;
+  color: var(--color-muted);
+}
+
 .contact-link {
   display: inline-flex;
   align-items: center;
