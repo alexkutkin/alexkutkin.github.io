@@ -16,7 +16,7 @@ The existing brand link on all localized pages includes a single decorative SVG 
 
 ## Gaze geometry
 
-The dot renders at 16 px, so the visible eye is 8 px and the pupil 3.3 px. Measured in Chromium: in `name` the pupil centre sits 1.25 px right of the eye centre, in `reader` it is exactly centred, and in `away` it is 1.75 px left and 1 px down — all inside the eye. Earlier `left`/`right` state names were misleading: the old `left` value centred the pupil (eye contact) and there was no true leftward gaze. Keep new values inside ±2.35 px of the eye centre or the pupil clips the eye edge.
+The dot is `1em`, so it matches the brand type: 18 px on narrow viewports and 20 px from about 1280 px up. The visible eye is 9–10 px and the pupil 3.7–4.1 px. Measured in Chromium: in `name` the pupil centre sits 1.4–1.6 px right of the eye centre, in `reader` it is exactly centred, and in `away` it is 2–2.2 px left and 1.1–1.25 px down — all inside the eye. Earlier `left`/`right` state names were misleading: the old `left` value centred the pupil (eye contact) and there was no true leftward gaze. Keep new values inside ±2.64–2.94 px of the eye centre or the pupil clips the eye edge.
 
 ## Accessibility stance
 
