@@ -30,7 +30,7 @@ export const en = {
     homeTitle: "Alex Kutkin — apps and tools",
     homeDescription: "Personal projects, notes and building software with AI agents.",
     cvTitle: "CV — Alex Kutkin",
-    cvDescription: "Experience, education, skills and languages.",
+    cvDescription: "Alex Kutkin is a software developer with over ten years of experience, from C# and backend development to web applications. Currently focused on building with AI agents.",
     notFoundTitle: "Page not found — Alex Kutkin",
     notFoundDescription: "The requested page was not found.",
   },
