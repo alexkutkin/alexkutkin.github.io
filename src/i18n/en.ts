@@ -60,7 +60,7 @@ export const en = {
       {
         title: "Herdr Tray",
         description:
-          "A small Windows app that shows which Herdr agents are working and which are waiting for input. Open the shared status panel to keep an eye on them all at once.",
+          "A small Windows app that shows which AI agents in the Herdr terminal are working and which are waiting for input. Open the shared status panel to keep an eye on them all at once.",
         href: "https://github.com/alexkutkin/herdr-tray",
         linkLabel: "GitHub",
       },

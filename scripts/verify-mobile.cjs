@@ -52,6 +52,10 @@ async function main() {
           });
           const label = `${browserName}-${lang}-${width}-${colorScheme}`;
           assert.ok(layout.scrollWidth <= width + 1, `${label}: horizontal overflow`);
+          for (const target of await page.locator(".brand, .site-nav__link, .language-switch__link, .theme-switch__option").all()) {
+            const box = await target.boundingBox();
+            assert.ok(box.width >= 44 && box.height >= 44, `${label}: header touch target smaller than 44px`);
+          }
           assert.ok(Math.abs(layout.preferences.right - layout.utilities.right) <= 1, `${label}: preferences not aligned right: ${JSON.stringify(layout)}`);
           assert.ok(Math.abs(layout.navigation.left - layout.utilities.left) <= 1, `${label}: navigation not aligned left`);
           assert.ok(Math.abs((layout.language.top + layout.language.bottom) - (layout.theme.top + layout.theme.bottom)) <= 2, `${label}: language and theme not grouped on one row`);

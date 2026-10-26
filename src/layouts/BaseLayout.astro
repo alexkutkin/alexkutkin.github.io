@@ -7,7 +7,7 @@ import "@fontsource/lora/600.css";
 
 import Footer from "../components/Footer.astro";
 import Header from "../components/Header.astro";
-import { getDictionary, type Locale } from "../i18n";
+import { getDictionary, locales, switchLocalePath, type Locale } from "../i18n";
 
 import "../styles/tokens.css";
 import "../styles/primitives.css";
@@ -36,6 +36,10 @@ const site = Astro.site ?? new URL("https://alexkutkin.github.io");
 const canonical = new URL(canonicalPath ?? Astro.url.pathname, site).href;
 const ogImage = new URL("/og.png", site).href;
 const ogLocale = lang === "ru" ? "ru_RU" : "en_US";
+const isLocalizedPage = /^\/(en|ru)\//.test(Astro.url.pathname);
+const fallbackPath = /^\/(en|ru)\/$/.test(Astro.url.pathname)
+  ? "/"
+  : switchLocalePath(Astro.url.pathname, "en");
 ---
 
 <!doctype html>
@@ -45,6 +49,12 @@ const ogLocale = lang === "ru" ? "ru_RU" : "en_US";
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{title}</title>
     <meta name="description" content={description} />
+    {isLocalizedPage && <link rel="canonical" href={canonical} />}
+    {isLocalizedPage && locales.map((locale) => (
+      <link rel="alternate" hreflang={locale} href={new URL(switchLocalePath(Astro.url.pathname, locale), site).href} />
+    ))}
+    {isLocalizedPage && <link rel="alternate" hreflang="x-default" href={new URL(fallbackPath, site).href} />}
+    <link rel="sitemap" href="/sitemap-index.xml" />
     <meta name="application-name" content="Alex Kutkin personal site" />
     <meta name="color-scheme" content="light dark" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />

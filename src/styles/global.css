@@ -245,6 +245,21 @@ p {
 }
 
 @media (max-width: 48rem) {
+  .brand,
+  .site-nav__link,
+  .language-switch__link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-block-size: 44px;
+    min-inline-size: 44px;
+  }
+
+  .theme-switch__option {
+    inline-size: 44px;
+    block-size: 44px;
+  }
+
   .site-header__row {
     flex-wrap: wrap;
   }
