@@ -51,15 +51,21 @@ April 2016 — July 2017.
 
 I wrote software for testing equipment and collecting and analyzing data. I also worked on a web service for controlling a smart home, using C#, WinForms, ASP.NET MVC and AngularJS.
 
+There was plenty of freedom and all kinds of tasks. I'm grateful for that trust — at the time, it was the most important thing anyone could have given me.
+
 ### BARS Group — Junior C# Developer
 
 October 2014 — October 2015.
 
 I worked on an electronic procurement application, developing backend features and interfaces, fixing bugs, and optimizing queries and XML processing. I used C#, ASP.NET MVC and Entity Framework.
 
-## Skills
+My first programming job. The tasks gradually got harder, and I became more careful about saying “I'm almost done.”
 
-JavaScript, TypeScript, React, C#, .NET.
+## What I've worked with
+
+Most of my work has been with JavaScript, TypeScript and React. I've also worked with C#, .NET and Node.js. My experience covers interfaces, backends, databases, builds and deployment.
+
+I look at the task as a whole. I can work on either the frontend or the backend — wherever the work needs to happen to solve the problem.
 
 ## Education
 

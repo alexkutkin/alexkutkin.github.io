@@ -268,8 +268,8 @@ async function runSite({ browser, baseUrl, artifactDir, report }) {
     const navLabel = { en: "Home", ru: "Главная" };
     const footerSite = { en: "Personal site", ru: "Личный сайт" };
     const cvExpectations = {
-      en: ["Experience", "Lead Developer", "MTS", "December 2022 — May 2024", "Education", "professional retraining in software development, 2015", "Novosibirsk State Technical University", "Skills", "JavaScript, TypeScript, React, C#, .NET", "Languages", "English — B2"],
-      ru: ["Опыт", "ведущий разработчик", "МТС", "Декабрь 2022 — май 2024", "Образование", "НГТУ — профессиональная переподготовка в области программирования, 2015", "Навыки", "JavaScript, TypeScript, React, C#, .NET", "Языки", "Английский — B2"],
+      en: ["Experience", "Lead Developer", "MTS", "December 2022 — May 2024", "Education", "professional retraining in software development, 2015", "Novosibirsk State Technical University", "What I've worked with", "JavaScript, TypeScript and React", "C#, .NET and Node.js", "Languages", "English — B2"],
+      ru: ["Опыт", "ведущий разработчик", "МТС", "Декабрь 2022 — май 2024", "Образование", "НГТУ — профессиональная переподготовка в области программирования, 2015", "С чем работал", "JavaScript, TypeScript и React", "C#, .NET и Node.js", "Языки", "Английский — B2"],
     };
 
     for (const route of routes) {
@@ -366,6 +366,24 @@ async function runSite({ browser, baseUrl, artifactDir, report }) {
           for (const expected of cvExpectations[route.lang]) {
             check(`${label} shows ${JSON.stringify(expected)}`, info.mainText.includes(expected), expected);
           }
+          const contacts = page.locator(".cv-body > p:last-child a");
+          const contactStyles = await contacts.evaluateAll((links) => links.map((link) => ({
+            href: link.getAttribute("href"),
+            decoration: getComputedStyle(link).textDecorationLine,
+            color: getComputedStyle(link).color,
+            surroundingColor: getComputedStyle(link.parentElement).color,
+          })));
+          check(`${label} visibly distinguishes every contact link without hover`, contactStyles.length === 3 && contactStyles.every((link) => link.decoration.includes("underline") && link.color !== link.surroundingColor), JSON.stringify(contactStyles));
+          check(`${label} keeps the expected contact destinations`, contactStyles.map((link) => link.href).join(",") === "https://t.me/alxt,mailto:hi@alexkutkin.com,https://github.com/alexkutkin", JSON.stringify(contactStyles));
+          await contacts.first().focus();
+          const contactFocus = await contacts.first().evaluate((link) => ({
+            focused: document.activeElement === link,
+            outline: getComputedStyle(link).outlineStyle,
+          }));
+          check(`${label} gives focused contact links a visible outline`, contactFocus.focused && contactFocus.outline !== "none", JSON.stringify(contactFocus));
+          await page.keyboard.press("Tab");
+          check(`${label} reaches email by keyboard after Telegram`, await contacts.nth(1).evaluate((link) => document.activeElement === link), "Telegram → email");
+          await capture(`cv-contacts-${route.lang}`, page.locator(".cv-body > p:last-child"));
           await capture(`cv-${route.lang}`, page, { fullPage: true });
         }
         if (route.kind === "not-found") {
