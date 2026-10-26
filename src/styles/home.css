@@ -1,8 +1,21 @@
 .home-hero,
 .home-about {
-  --sidebar-width: var(--measure);
-  --sidebar-min: min(28.25rem, 100%);
-  --sidebar-gap: var(--space-2xl);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--space-2xl);
+}
+
+.home-hero__text,
+.home-projects {
+  flex: 1 1 20rem;
+  min-inline-size: 0;
+}
+
+.home-hero__aside,
+.home-contacts {
+  flex: 0 0 min(28.25rem, 100%);
+  min-inline-size: 0;
 }
 
 .home-hero__text {
