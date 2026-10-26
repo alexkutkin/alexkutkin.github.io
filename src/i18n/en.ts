@@ -46,7 +46,7 @@ export const en = {
     contactLabel: "Contact",
     socialsLabel: "Social",
     notesTitle: "Notes",
-    telegram: "Message on Telegram",
+    telegram: "Telegram",
     projects: [
       {
         title: "PasteHatch",
