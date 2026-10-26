@@ -37,7 +37,7 @@ const notes = page.data.map((entry) => ({
   section="home"
 >
   <div class="home">
-    <section class="home-hero sidebar" aria-labelledby="home-title">
+    <section class="home-hero" aria-labelledby="home-title">
       <div class="home-hero__text">
         <h1 id="home-title" class="home-title">{t.authorName}</h1>
         <div class="home-hero__copy">
@@ -52,7 +52,7 @@ const notes = page.data.map((entry) => ({
 
     <hr class="home-rule" />
 
-    <section class="home-about sidebar" aria-label={t.home.projectsLabel}>
+    <section class="home-about" aria-label={t.home.projectsLabel}>
       <div class="home-projects">
         <p class="section-label">{t.home.projectsLabel}</p>
         <div class="project-list">

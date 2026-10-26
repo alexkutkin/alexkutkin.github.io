@@ -11,27 +11,6 @@
   padding-inline: var(--page-margin);
 }
 
-.sidebar {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--sidebar-gap, var(--gutter));
-}
-
-.sidebar > * {
-  min-inline-size: 0;
-}
-
-.sidebar > :first-child {
-  flex-basis: var(--sidebar-width, 18rem);
-  flex-grow: 1;
-}
-
-.sidebar > :last-child {
-  flex-basis: 0;
-  flex-grow: 999;
-  min-width: var(--sidebar-min, 50%);
-}
-
 .icon {
   display: inline-flex;
   align-items: center;
