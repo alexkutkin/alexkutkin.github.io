@@ -27,3 +27,16 @@ Preview the latest build locally:
 ```sh
 npm run preview
 ```
+
+## Content checks
+
+Published articles live in `src/content/articles`. Demonstration posts are kept
+separately in `tests/fixtures/articles` for layout, pagination and Mermaid checks.
+See [the fixture instructions](tests/fixtures/README.md) for the browser harness.
+
+Check the normal build for accidental test content:
+
+```sh
+npm run build
+node scripts/verify-public-content.mjs
+```

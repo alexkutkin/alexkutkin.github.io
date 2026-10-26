@@ -55,14 +55,14 @@ export const ru: Dictionary = {
       {
         title: "PasteHatch",
         description:
-          "Собирает файлы, скриншоты, текст и ссылки в папку, которую можно передать локальному агенту.",
+          "Небольшая программа для Windows, чтобы собирать материалы для ИИ-агентов: файлы, скриншоты, текст и ссылки. Всё сохраняется в обычную папку.",
         href: "https://github.com/alexkutkin/paste-hatch",
         linkLabel: "GitHub",
       },
       {
         title: "Herdr Tray",
         description:
-          "Значок в системном трее показывает состояние агентов Herdr и открывает панель их статуса.",
+          "Небольшая программа для Windows: показывает, какие агенты Herdr работают, а какие ждут ответа. Можно открыть общую панель и следить за всеми сразу.",
         href: "https://github.com/alexkutkin/herdr-tray",
         linkLabel: "GitHub",
       },

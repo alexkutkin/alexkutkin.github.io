@@ -53,14 +53,14 @@ export const en = {
       {
         title: "PasteHatch",
         description:
-          "Collects files, screenshots, text and links into a folder you can hand to a local agent.",
+          "A small Windows app for collecting materials for AI agents: files, screenshots, text and links. Everything is saved in an ordinary folder.",
         href: "https://github.com/alexkutkin/paste-hatch",
         linkLabel: "GitHub",
       },
       {
         title: "Herdr Tray",
         description:
-          "A system tray icon shows the status of Herdr agents and opens their status panel.",
+          "A small Windows app that shows which Herdr agents are working and which are waiting for input. Open the shared status panel to keep an eye on them all at once.",
         href: "https://github.com/alexkutkin/herdr-tray",
         linkLabel: "GitHub",
       },

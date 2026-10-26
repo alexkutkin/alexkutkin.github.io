@@ -203,7 +203,7 @@ async function runSite({ browser, baseUrl, artifactDir, report }) {
     for (const lang of ["en", "ru"]) {
       const home = lang === "en" ? "/en/" : "/ru/";
       const second = lang === "en" ? "/en/2/" : "/ru/2/";
-      const expectedDate = lang === "en" ? "10/21/2026" : "21.10.2026";
+      const expectedDate = lang === "en" ? "10/26/2026" : "26.10.2026";
       await page.goto(absolute(home), { waitUntil: "domcontentloaded" });
       await page.waitForFunction(
         (date) => document.querySelector("time[data-format-date]")?.textContent?.trim() === date,
@@ -231,13 +231,13 @@ async function runSite({ browser, baseUrl, artifactDir, report }) {
         current: [...document.querySelectorAll(".pagination a[aria-current='page']")].map((link) => link.textContent.trim()),
         links: [...document.querySelectorAll("ol.note-list a[href*=\"/article/\"]")].map((link) => new URL(link.href).pathname),
       }));
-      check(`${second} lists the remaining note`, secondPage.notes === 1, `notes=${secondPage.notes}`);
+      check(`${second} lists the remaining notes`, secondPage.notes === 2, `notes=${secondPage.notes}`);
       check(`${second} marks page 2 as current`, secondPage.current.join(",") === "2", secondPage.current.join(","));
       for (const articlePath of secondPage.links) articlePaths[lang].add(articlePath);
       if (lang === "en") await capture("notes-page-2", page, { fullPage: true });
     }
-    check("English notes expose eleven article links", articlePaths.en.size === 11, `${articlePaths.en.size} links`);
-    check("Russian notes expose eleven article links", articlePaths.ru.size === 11, `${articlePaths.ru.size} links`);
+    check("English notes expose twelve article links", articlePaths.en.size === 12, `${articlePaths.en.size} links`);
+    check("Russian notes expose twelve article links", articlePaths.ru.size === 12, `${articlePaths.ru.size} links`);
     const enSlugs = [...articlePaths.en].map(slugOf).sort();
     const ruSlugs = [...articlePaths.ru].map(slugOf).sort();
     check("Both locales use the same article slugs", enSlugs.join(",") === ruSlugs.join(","), `${enSlugs.join(",")} vs ${ruSlugs.join(",")}`);
@@ -544,11 +544,11 @@ async function runSite({ browser, baseUrl, artifactDir, report }) {
     const feedEn = await context.request.get(absolute("/en/rss.xml"));
     const feedEnText = await feedEn.text();
     check("English RSS responds with XML", feedEn.status() === 200 && (feedEn.headers()["content-type"] ?? "").includes("xml"), `HTTP ${feedEn.status()} ${feedEn.headers()["content-type"]}`);
-    check("English RSS has eleven items and full article text", (feedEnText.match(/<item>/g) ?? []).length === 11 && feedEnText.includes("<language>en</language>") && feedEnText.includes("The first draft of a feature"), `items=${(feedEnText.match(/<item>/g) ?? []).length}`);
+    check("English RSS has twelve items and full article text", (feedEnText.match(/<item>/g) ?? []).length === 12 && feedEnText.includes("<language>en</language>") && feedEnText.includes("The first draft of a feature"), `items=${(feedEnText.match(/<item>/g) ?? []).length}`);
     const feedRu = await context.request.get(absolute("/ru/rss.xml"));
     const feedRuText = await feedRu.text();
     check("Russian RSS responds with XML", feedRu.status() === 200 && (feedRu.headers()["content-type"] ?? "").includes("xml"), `HTTP ${feedRu.status()} ${feedRu.headers()["content-type"]}`);
-    check("Russian RSS has eleven items and full article text", (feedRuText.match(/<item>/g) ?? []).length === 11 && feedRuText.includes("<language>ru</language>") && feedRuText.includes("Первый черновик функции"), `items=${(feedRuText.match(/<item>/g) ?? []).length}`);
+    check("Russian RSS has twelve items and full article text", (feedRuText.match(/<item>/g) ?? []).length === 12 && feedRuText.includes("<language>ru</language>") && feedRuText.includes("Первый черновик функции"), `items=${(feedRuText.match(/<item>/g) ?? []).length}`);
     report.actions.push({ action: "Read both RSS feeds", result: { en: feedEn.status(), ru: feedRu.status() } });
 
     // Internal link audit.

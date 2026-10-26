@@ -3,7 +3,12 @@ import { glob } from "astro/loaders";
 import { z } from "astro/zod";
 
 const articles = defineCollection({
-  loader: glob({ pattern: "**/*.md", base: "./src/content/articles" }),
+  loader: glob({
+    pattern: import.meta.env.VERIFY_ARTICLE_FIXTURES === "1"
+      ? ["src/content/articles/**/*.md", "tests/fixtures/articles/**/*.md"]
+      : ["src/content/articles/**/*.md"],
+    base: ".",
+  }),
   schema: z.object({
     lang: z.enum(["en", "ru"]),
     title: z.string(),

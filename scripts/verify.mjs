@@ -224,8 +224,9 @@ async function runVerification() {
   const astroCli = path.join(projectDir, "node_modules", "astro", "bin", "astro.mjs");
   const packageJson = JSON.parse(fs.readFileSync(path.join(projectDir, "package.json"), "utf8"));
   const serverMode = config.suite === "site" ? "preview" : "dev";
+  const buildDir = path.join(runDir, "site");
   const serverArgs = serverMode === "preview"
-    ? [astroCli, "preview", "--host", "0.0.0.0", "--port", String(config.port), "--ignore-lock"]
+    ? [astroCli, "preview", "--outDir", buildDir, "--host", "0.0.0.0", "--port", String(config.port), "--ignore-lock"]
     : [astroCli, "dev", "--host", "0.0.0.0", "--port", String(config.port), "--strictPort"];
   const manifest = {
     runId,
@@ -259,7 +260,11 @@ async function runVerification() {
     if (config.suite === "site") {
       const buildStartedAt = new Date().toISOString();
       try {
-        const buildOutput = runCommand(process.execPath, [astroCli, "build"], { timeout: 240000, maxBuffer: 32 * 1024 * 1024 });
+        const buildOutput = runCommand(process.execPath, [astroCli, "build", "--outDir", buildDir], {
+          env: { ...process.env, VERIFY_ARTICLE_FIXTURES: "1" },
+          timeout: 240000,
+          maxBuffer: 32 * 1024 * 1024,
+        });
         fs.writeFileSync(path.join(runDir, "build.stdout.log"), buildOutput, "utf8");
         fs.writeFileSync(path.join(runDir, "build.stderr.log"), "", "utf8");
         manifest.build = { status: "passed", startedAt: buildStartedAt, finishedAt: new Date().toISOString() };
@@ -271,7 +276,7 @@ async function runVerification() {
         throw new Error(`Static build failed (exit ${error.status ?? 1}); see ${path.join(runDir, "build.stderr.log")}`);
       }
       for (const required of ["index.html", "404.html", "en/index.html", "ru/index.html", "en/cv/index.html", "ru/cv/index.html"]) {
-        if (!fs.existsSync(path.join(projectDir, "dist", required))) throw new Error(`Build output is missing dist/${required}`);
+        if (!fs.existsSync(path.join(buildDir, required))) throw new Error(`Verification build output is missing ${required}`);
       }
       console.log(`BUILD ${JSON.stringify({ status: "passed", suite: config.suite })}`);
     }
