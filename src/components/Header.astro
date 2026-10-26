@@ -1,5 +1,6 @@
 ---
 import LanguageSwitch from "./LanguageSwitch.astro";
+import LivingDot from "./LivingDot.astro";
 import ThemeSwitch from "./ThemeSwitch.astro";
 import type { Dictionary, Locale } from "../i18n";
 
@@ -19,7 +20,7 @@ const isHomePage =
 <header class="site-header center">
   <div class="site-header__row">
     <a class="brand" href={`/${lang}/`}>
-      <span class="brand__dot" aria-hidden="true"></span>
+      <LivingDot />
       <span>{t.authorName}</span>
     </a>
     <div class="site-header__utilities">
