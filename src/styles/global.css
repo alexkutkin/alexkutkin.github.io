@@ -114,14 +114,6 @@ p {
   line-height: 1.2;
 }
 
-.brand__dot {
-  flex: none;
-  inline-size: 0.5rem;
-  block-size: 0.5rem;
-  border-radius: 50%;
-  background: var(--color-accent);
-}
-
 .site-header__utilities {
   display: flex;
   align-items: center;
