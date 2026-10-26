@@ -1,0 +1,57 @@
+/*
+ * Layout primitives from references/every-layout-grid.css.
+ * Only the primitives this site uses are carried over.
+ * https://every-layout.dev
+ */
+
+.center {
+  box-sizing: border-box;
+  width: min(var(--center-max, var(--content-max)), 100%);
+  margin-inline: auto;
+  padding-inline: var(--page-margin);
+}
+
+.sidebar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sidebar-gap, var(--gutter));
+}
+
+.sidebar > * {
+  min-inline-size: 0;
+}
+
+.sidebar > :first-child {
+  flex-basis: var(--sidebar-width, 18rem);
+  flex-grow: 1;
+}
+
+.sidebar > :last-child {
+  flex-basis: 0;
+  flex-grow: 999;
+  min-width: var(--sidebar-min, 50%);
+}
+
+.icon {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--icon-space, 0.5em);
+}
+
+.icon > svg {
+  flex-shrink: 0;
+  width: var(--icon-size, 1em);
+  height: var(--icon-size, 1em);
+}
+
+.visually-hidden {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}

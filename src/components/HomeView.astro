@@ -1,0 +1,126 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import Icon from "./Icon.astro";
+import NoteCard from "./NoteCard.astro";
+import Pagination from "./Pagination.astro";
+import PortraitCard from "./PortraitCard.astro";
+import type { Dictionary, Locale } from "../i18n";
+import { articleSlug, type ArticleEntry } from "../lib/articles";
+import "../styles/home.css";
+
+interface PageData {
+  data: ArticleEntry[];
+  currentPage: number;
+  lastPage: number;
+}
+
+interface Props {
+  page: PageData;
+  lang: Locale;
+  t: Dictionary;
+}
+
+const { page, lang, t } = Astro.props;
+
+const notes = page.data.map((entry) => ({
+  title: entry.data.title,
+  description: entry.data.description,
+  date: entry.data.date,
+  href: `/${lang}/article/${articleSlug(entry)}/`,
+}));
+---
+
+<BaseLayout
+  lang={lang}
+  title={t.meta.homeTitle}
+  description={t.meta.homeDescription}
+  section="home"
+>
+  <div class="home">
+    <section class="home-hero sidebar" aria-labelledby="home-title">
+      <div class="home-hero__text">
+        <h1 id="home-title" class="home-title">{t.authorName}</h1>
+        <div class="home-hero__copy">
+          <p class="home-intro">{t.home.intro}</p>
+          {t.home.bio.map((paragraph) => <p>{paragraph}</p>)}
+        </div>
+      </div>
+      <div class="home-hero__aside">
+        <PortraitCard alt={t.home.photoAlt} caption={t.home.photoCaption} />
+      </div>
+    </section>
+
+    <hr class="home-rule" />
+
+    <section class="home-about sidebar" aria-label={t.home.projectsLabel}>
+      <div class="home-projects">
+        <p class="section-label">{t.home.projectsLabel}</p>
+        <div class="project-list">
+          {
+            t.home.projects.map((project) => (
+              <article class="project">
+                <h2 class="project__title">{project.title}</h2>
+                <p class="project__description">{project.description}</p>
+                <a class="project__link" href={project.href}>
+                  <Icon name="github" />
+                  <span>{project.linkLabel}</span>
+                </a>
+              </article>
+            ))
+          }
+        </div>
+      </div>
+
+      <div class="home-contacts">
+        <div class="contact-group">
+          <p class="section-label">{t.home.contactLabel}</p>
+          <a class="contact-link contact-link--telegram" href="https://t.me/alxt">
+            <Icon name="telegram" />
+            <span>{t.home.telegram}</span>
+          </a>
+          <a class="contact-link contact-link--email" href="mailto:dev.kutkin@gmail.com">
+            <Icon name="mail" />
+            <span>dev.kutkin@gmail.com</span>
+          </a>
+        </div>
+        <div class="contact-group">
+          <p class="section-label">{t.home.socialsLabel}</p>
+          <a class="contact-social" href="https://github.com/alexkutkin">
+            <Icon name="github" />
+            <span>GitHub</span>
+          </a>
+          <a class="contact-social" href="https://x.com/alex_kutkin">
+            <Icon name="x" />
+            <span>X</span>
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <hr class="home-rule" />
+
+    <section class="home-notes" aria-labelledby="notes-title">
+      <h2 id="notes-title" class="home-notes__title">{t.home.notesTitle}</h2>
+      <ol class="note-list">
+        {
+          notes.map((note) => (
+            <NoteCard
+              title={note.title}
+              description={note.description}
+              date={note.date}
+              href={note.href}
+              lang={lang}
+              t={t}
+            />
+          ))
+        }
+      </ol>
+      <Pagination
+        currentPage={page.currentPage}
+        lastPage={page.lastPage}
+        lang={lang}
+        t={t}
+      />
+    </section>
+  </div>
+</BaseLayout>

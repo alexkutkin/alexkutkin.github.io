@@ -1,0 +1,33 @@
+---
+import { render, type CollectionEntry } from "astro:content";
+import BaseLayout from "../layouts/BaseLayout.astro";
+import type { Dictionary, Locale } from "../i18n";
+import "../styles/cv.css";
+
+interface Props {
+  entry: CollectionEntry<"cv">;
+  lang: Locale;
+  t: Dictionary;
+}
+
+const { entry, lang, t } = Astro.props;
+const { Content } = await render(entry);
+---
+
+<BaseLayout
+  lang={lang}
+  title={t.meta.cvTitle}
+  description={t.meta.cvDescription}
+  section="cv"
+>
+  <article class="cv">
+    <header class="cv-header">
+      <p class="section-label">{entry.data.label}</p>
+      <h1 class="cv-title">{entry.data.title}</h1>
+      <p class="cv-subtitle">{entry.data.subtitle}</p>
+    </header>
+    <div class="cv-body">
+      <Content />
+    </div>
+  </article>
+</BaseLayout>

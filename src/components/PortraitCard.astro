@@ -1,0 +1,16 @@
+---
+import { Image } from "astro:assets";
+import portrait from "../assets/portrait.jpg";
+
+interface Props {
+  alt: string;
+  caption: string;
+}
+
+const { alt, caption } = Astro.props;
+---
+
+<figure class="portrait">
+  <Image src={portrait} alt={alt} width={340} height={340} format="webp" />
+  <figcaption>{caption}</figcaption>
+</figure>

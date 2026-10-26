@@ -1,0 +1,28 @@
+---
+import type { Dictionary, Locale } from "../i18n";
+
+interface Props {
+  currentPage: number;
+  lastPage: number;
+  lang: Locale;
+  t: Dictionary;
+}
+
+const { currentPage, lastPage, lang, t } = Astro.props;
+const pages = Array.from({ length: lastPage }, (_, index) => index + 1);
+const hrefFor = (page: number) => (page === 1 ? `/${lang}/` : `/${lang}/${page}/`);
+---
+
+<nav class="pagination" aria-label={t.a11y.pagination}>
+  {
+    pages.map((page) => (
+      <a
+        href={hrefFor(page)}
+        aria-current={page === currentPage ? "page" : undefined}
+        aria-label={`${t.pagination.page} ${page}`}
+      >
+        {page}
+      </a>
+    ))
+  }
+</nav>

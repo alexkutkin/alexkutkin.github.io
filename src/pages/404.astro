@@ -1,0 +1,54 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { getDictionary } from "../i18n";
+
+const t = getDictionary("en");
+---
+
+<BaseLayout
+  lang="en"
+  title={t.meta.notFoundTitle}
+  description={t.meta.notFoundDescription}
+  section="none"
+  showLanguageSwitch={false}
+  canonicalPath="/404.html"
+>
+  <section class="not-found">
+    <p class="section-label">404</p>
+    <h1 class="not-found__title">{t.notFound.title}</h1>
+    <p class="not-found__body">{t.notFound.body}</p>
+    <a class="not-found__link" href="/en/">{t.notFound.home}</a>
+  </section>
+</BaseLayout>
+
+<style>
+  .not-found {
+    max-inline-size: var(--measure);
+    margin-inline: auto;
+  }
+
+  .not-found__title {
+    margin: var(--space-sm) 0 0;
+    font-family: var(--font-serif);
+    font-size: var(--text-3xl);
+    line-height: 1.12;
+  }
+
+  .not-found__body {
+    margin: var(--space-sm) 0 0;
+    color: var(--color-muted);
+  }
+
+  .not-found__link {
+    display: inline-block;
+    margin-block-start: var(--space-lg);
+    color: var(--color-accent);
+    font-weight: 600;
+    text-underline-offset: 0.2em;
+  }
+
+  .not-found__link:hover,
+  .not-found__link:focus-visible {
+    text-decoration: underline;
+  }
+</style>

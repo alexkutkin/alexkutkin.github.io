@@ -1,0 +1,78 @@
+:root {
+  color-scheme: light;
+
+  --font-sans: "Manrope", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-serif: "Lora", Georgia, "Times New Roman", serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Consolas, monospace;
+
+  --color-bg: #f7f2e8;
+  --color-surface: #f1ece2;
+  --color-card: #fffdf8;
+  --color-text: #202a34;
+  --color-muted: #626861;
+  --color-accent: #59547e;
+  --color-border: #ded7ca;
+  --color-on-accent: #f7f2e8;
+  --shadow-card: 0 2px 12px rgb(32 42 52 / 0.12);
+
+  /* Spacing: fixed small steps and fluid larger steps over 20rem–80rem. */
+  --space-2xs: 0.25rem;
+  --space-xs: 0.5rem;
+  --space-sm: 0.75rem;
+  --space-md: clamp(1rem, 0.916667rem + 0.416667vw, 1.25rem);
+  --space-lg: clamp(1.5rem, 1.333333rem + 0.833333vw, 2rem);
+  --space-xl: clamp(2rem, 1.666667rem + 1.666667vw, 3rem);
+  --space-2xl: clamp(3rem, 2.666667rem + 1.666667vw, 4rem);
+
+  --gutter: var(--space-lg);
+  --content-max: 80rem;
+  --measure: 65ch;
+  --page-margin: clamp(1rem, 0.666667rem + 1.666667vw, 2rem);
+
+  --radius-xs: 0.25rem;
+  --radius-sm: 0.5rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.5rem;
+  --radius-pill: 999px;
+
+  /* Fluid type over the same 20rem–80rem interval. */
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: clamp(1rem, 0.958333rem + 0.208333vw, 1.125rem);
+  --text-md: clamp(1.125rem, 1.083333rem + 0.208333vw, 1.25rem);
+  --text-lg: clamp(1.25rem, 1.166667rem + 0.416667vw, 1.5rem);
+  --text-xl: clamp(1.5rem, 1.416667rem + 0.416667vw, 1.75rem);
+  --text-2xl: clamp(1.75rem, 1.666667rem + 0.416667vw, 2rem);
+  --text-3xl: clamp(2rem, 1.833333rem + 0.833333vw, 2.5rem);
+  --text-4xl: clamp(2.5rem, 2.333333rem + 0.833333vw, 3rem);
+  --text-5xl: clamp(3rem, 2.833333rem + 0.833333vw, 3.5rem);
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --color-bg: #17191f;
+  --color-surface: #1f222a;
+  --color-card: #262a33;
+  --color-text: #f3eee4;
+  --color-muted: #a7a29a;
+  --color-accent: #b9b2e3;
+  --color-border: #383c46;
+  --color-on-accent: #17191f;
+  --shadow-card: 0 2px 12px rgb(0 0 0 / 0.4);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --color-bg: #17191f;
+    --color-surface: #1f222a;
+    --color-card: #262a33;
+    --color-text: #f3eee4;
+    --color-muted: #a7a29a;
+    --color-accent: #b9b2e3;
+    --color-border: #383c46;
+    --color-on-accent: #17191f;
+    --shadow-card: 0 2px 12px rgb(0 0 0 / 0.4);
+  }
+}

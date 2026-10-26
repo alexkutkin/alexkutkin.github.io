@@ -1,0 +1,30 @@
+---
+import Icon from "./Icon.astro";
+import type { Dictionary } from "../i18n";
+
+interface Props {
+  labels: Dictionary["theme"];
+  label: string;
+}
+
+const { labels, label } = Astro.props;
+---
+
+<fieldset class="theme-switch">
+  <legend class="visually-hidden">{label}</legend>
+  <label class="theme-switch__option">
+    <input class="visually-hidden" type="radio" name="theme" value="system" checked />
+    <Icon name="monitor" />
+    <span class="visually-hidden">{labels.system}</span>
+  </label>
+  <label class="theme-switch__option">
+    <input class="visually-hidden" type="radio" name="theme" value="light" />
+    <Icon name="sun" />
+    <span class="visually-hidden">{labels.light}</span>
+  </label>
+  <label class="theme-switch__option">
+    <input class="visually-hidden" type="radio" name="theme" value="dark" />
+    <Icon name="moon" />
+    <span class="visually-hidden">{labels.dark}</span>
+  </label>
+</fieldset>
