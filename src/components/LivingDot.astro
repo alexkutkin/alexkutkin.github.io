@@ -1,4 +1,4 @@
-<span class="living-dot" data-living-dot aria-hidden="true">
+<span class="living-dot" data-living-dot data-state="name" aria-hidden="true">
   <svg viewBox="0 0 32 32" focusable="false">
     <circle class="living-dot__body" cx="16" cy="16" r="15" />
     <circle class="living-dot__eye" cx="17.5" cy="14" r="8" />
@@ -27,34 +27,67 @@
     fill: var(--color-bg);
     transform-box: fill-box;
     transform-origin: center;
-    transition: transform 140ms ease-out;
+    transition: transform 160ms cubic-bezier(0.34, 1.56, 0.64, 1);
   }
   .living-dot__pupil {
     fill: var(--color-accent);
     transform-box: fill-box;
     transform-origin: center;
-    transition: transform 140ms ease-out, translate 140ms ease-out;
+    transition:
+      transform 160ms cubic-bezier(0.34, 1.56, 0.64, 1),
+      translate 200ms cubic-bezier(0.34, 1.56, 0.64, 1);
   }
-  .living-dot[data-state="left"] .living-dot__pupil { translate: -3px 0; }
-  .living-dot[data-state="right"] .living-dot__pupil { translate: 2px 0; }
+
+  /* The pupil sits right of the eye centre: name rests toward the author
+     name, reader centres it, away is a shy down-left glance. */
+  .living-dot[data-state="name"] .living-dot__pupil { translate: 0 0; }
+  .living-dot[data-state="reader"] .living-dot__pupil { translate: -2.5px 0; }
+  .living-dot[data-state="away"] .living-dot__pupil { translate: -6px 2px; }
 
   .living-dot[data-blink] .living-dot__eye {
-    transform: scaleY(0.04);
+    transform: scale(1.06, 0.04);
     transition-duration: 70ms;
+    transition-timing-function: ease-out;
   }
   .living-dot[data-blink] .living-dot__pupil {
     transform: scale(0);
     transition-duration: 70ms;
+    transition-timing-function: ease-out;
   }
   .living-dot[data-blink="half"] .living-dot__eye {
-    transform: scaleY(0.45);
+    transform: scale(1.02, 0.45);
   }
   .living-dot[data-blink="half"] .living-dot__pupil {
     transform: scale(0.75);
   }
 
+  .living-dot[data-slow-blink] .living-dot__eye {
+    animation: living-dot-slow-blink-eye 1.3s ease-in-out;
+  }
+  .living-dot[data-slow-blink] .living-dot__pupil {
+    animation: living-dot-slow-blink-pupil 1.3s ease-in-out;
+  }
+
+  @keyframes living-dot-slow-blink-eye {
+    0%, 8% { transform: scale(1); }
+    14%, 20% { transform: scale(1.02, 0.45); }
+    26%, 34% { transform: scale(1); }
+    40%, 78% { transform: scale(1.02, 0.45); }
+    86%, 100% { transform: scale(1); }
+  }
+
+  @keyframes living-dot-slow-blink-pupil {
+    0%, 8% { transform: scale(1); }
+    14%, 20% { transform: scale(0.75); }
+    26%, 34% { transform: scale(1); }
+    40%, 78% { transform: scale(0.75); }
+    86%, 100% { transform: scale(1); }
+  }
+
   @media (prefers-reduced-motion: reduce) {
     .living-dot__eye, .living-dot__pupil { transition: none; }
+    .living-dot[data-slow-blink] .living-dot__eye,
+    .living-dot[data-slow-blink] .living-dot__pupil { animation: none; }
   }
 </style>
 
@@ -65,13 +98,21 @@
   if (dot && brand) {
     let hovering = false;
     let greeted = false;
+    let slowBlinking = false;
     let blinkTimer: number | undefined;
     let blinkOffTimer: number | undefined;
     let secondBlinkTimer: number | undefined;
     let glanceTimer: number | undefined;
     let glanceRestTimer: number | undefined;
-    let hoverTimer: number | undefined;
     let greetingTimer: number | undefined;
+    let slowBlinkTimer: number | undefined;
+    let slowBlinkOffTimer: number | undefined;
+    let hoverTimers: number[] = [];
+
+    const clearHoverTimers = () => {
+      for (const timer of hoverTimers) window.clearTimeout(timer);
+      hoverTimers = [];
+    };
 
     const clearTimers = () => {
       window.clearTimeout(blinkTimer);
@@ -79,16 +120,22 @@
       window.clearTimeout(secondBlinkTimer);
       window.clearTimeout(glanceTimer);
       window.clearTimeout(glanceRestTimer);
-      window.clearTimeout(hoverTimer);
       window.clearTimeout(greetingTimer);
+      window.clearTimeout(slowBlinkTimer);
+      window.clearTimeout(slowBlinkOffTimer);
+      clearHoverTimers();
+      delete dot.dataset.blink;
+      delete dot.dataset.slowBlink;
+      slowBlinking = false;
     };
 
     const open = () => {
       delete dot.dataset.blink;
-      dot.dataset.state = "look";
+      dot.dataset.state = "name";
     };
 
     const blink = () => {
+      if (slowBlinking) return;
       delete dot.dataset.blink;
       // Force a frame so two quick blinks are two separate transitions.
       void dot.offsetWidth;
@@ -115,7 +162,7 @@
       window.clearTimeout(glanceTimer);
       if (motion.matches || document.hidden || hovering) return;
       glanceTimer = window.setTimeout(() => {
-        dot.dataset.state = Math.random() < 0.5 ? "left" : "right";
+        dot.dataset.state = Math.random() < 0.5 ? "reader" : "away";
         glanceRestTimer = window.setTimeout(() => {
           open();
           scheduleGlance();
@@ -123,13 +170,33 @@
       }, 20000 + Math.random() * 20000);
     };
 
+    const scheduleSlowBlink = () => {
+      window.clearTimeout(slowBlinkTimer);
+      if (motion.matches || document.hidden || hovering) return;
+      slowBlinkTimer = window.setTimeout(() => {
+        if (motion.matches || document.hidden || hovering) {
+          scheduleSlowBlink();
+          return;
+        }
+        open();
+        slowBlinking = true;
+        dot.dataset.slowBlink = "";
+        slowBlinkOffTimer = window.setTimeout(() => {
+          delete dot.dataset.slowBlink;
+          slowBlinking = false;
+          scheduleBlink();
+          scheduleSlowBlink();
+        }, 1400);
+      }, 120000 + Math.random() * 120000);
+    };
+
     const greet = () => {
       if (greeted || motion.matches || document.hidden) return;
-      greeted = true;
       greetingTimer = window.setTimeout(() => {
         if (hovering) return;
-        dot.dataset.state = Math.random() < 0.5 ? "left" : "right";
-        glanceRestTimer = window.setTimeout(open, 900);
+        greeted = true;
+        dot.dataset.state = "reader";
+        glanceRestTimer = window.setTimeout(open, 700);
       }, 1800);
     };
 
@@ -138,6 +205,13 @@
       greet();
       scheduleBlink();
       scheduleGlance();
+      scheduleSlowBlink();
+    };
+
+    const hoverLater = (state: "reader" | "away", delay: number) => {
+      hoverTimers.push(window.setTimeout(() => {
+        if (hovering) dot.dataset.state = state;
+      }, delay));
     };
 
     const engage = () => {
@@ -145,20 +219,18 @@
       hovering = true;
       clearTimers();
       open();
-      hoverTimer = window.setTimeout(() => {
-        if (hovering) dot.dataset.state = "left";
-      }, 550);
+      hoverLater("reader", 550);
+      hoverLater("away", 1150);
+      hoverLater("reader", 2050);
+      hoverLater("away", 2450);
     };
 
     const disengage = () => {
       hovering = false;
       clearTimers();
-      if (motion.matches) { open(); return; }
-      dot.dataset.state = "right";
-      glanceRestTimer = window.setTimeout(() => {
-        open();
-        resume();
-      }, 500);
+      open();
+      if (motion.matches) return;
+      glanceRestTimer = window.setTimeout(resume, 500);
     };
 
     brand.addEventListener("pointerenter", engage);
@@ -167,13 +239,17 @@
     brand.addEventListener("blur", disengage);
     document.addEventListener("visibilitychange", () => {
       clearTimers();
-      if (document.hidden) return;
       hovering = false;
+      if (document.hidden) return;
       resume();
     });
     motion.addEventListener("change", () => {
       clearTimers();
-      if (motion.matches) { open(); return; }
+      hovering = false;
+      if (motion.matches) {
+        open();
+        return;
+      }
       resume();
     });
     resume();
