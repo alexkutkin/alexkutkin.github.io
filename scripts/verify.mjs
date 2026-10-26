@@ -88,11 +88,12 @@ async function inspectInstance(manifest) {
   const alive = Number.isInteger(manifest.serverPid) && isProcessAlive(manifest.serverPid);
   checks.push({ name: "server process is running", passed: alive, detail: `PID ${manifest.serverPid ?? "missing"}` });
 
+  const serverMode = manifest.serverMode ?? "dev";
   const commandLine = alive ? getProcessCommandLine(manifest.serverPid) : "";
   const commandMatches = commandLine.includes("astro")
-    && commandLine.includes("dev")
+    && commandLine.includes(serverMode)
     && commandLine.includes(`--port ${manifest.port}`);
-  checks.push({ name: "PID is the recorded Astro dev server", passed: commandMatches, detail: commandLine || "process command line unavailable" });
+  checks.push({ name: `PID is the recorded Astro ${serverMode} server`, passed: commandMatches, detail: commandLine || "process command line unavailable" });
 
   let listenerPids = [];
   try {
@@ -173,7 +174,8 @@ function getConfig() {
     throw new Error(`BASE_URL must be an HTTP origin for the same configured PORT (currently ${port}): ${baseUrl}`);
   }
   const suite = options.suite ?? process.env.SUITE ?? "foundation";
-  if (suite !== "foundation") throw new Error(`Unsupported suite ${JSON.stringify(suite)}; available suite: foundation`);
+  const suites = ["foundation", "site"];
+  if (!suites.includes(suite)) throw new Error(`Unsupported suite ${JSON.stringify(suite)}; available suites: ${suites.join(", ")}`);
   return { port, baseUrl, suite };
 }
 
@@ -221,15 +223,20 @@ async function runVerification() {
   const browserScript = path.join(projectDir, "scripts", "verify-browser.cjs");
   const astroCli = path.join(projectDir, "node_modules", "astro", "bin", "astro.mjs");
   const packageJson = JSON.parse(fs.readFileSync(path.join(projectDir, "package.json"), "utf8"));
+  const serverMode = config.suite === "site" ? "preview" : "dev";
+  const serverArgs = serverMode === "preview"
+    ? [astroCli, "preview", "--host", "0.0.0.0", "--port", String(config.port), "--ignore-lock"]
+    : [astroCli, "dev", "--host", "0.0.0.0", "--port", String(config.port), "--strictPort"];
   const manifest = {
     runId,
     suite: config.suite,
+    serverMode,
     port: config.port,
     baseUrl: config.baseUrl,
     astroVersion: packageJson.dependencies?.astro ?? "unknown",
     startedAt: new Date().toISOString(),
     serverPid: null,
-    serverCommand: `${process.execPath} ${astroCli} dev --host 0.0.0.0 --port ${config.port} --strictPort`,
+    serverCommand: `${process.execPath} ${serverArgs.join(" ")}`,
     status: "starting",
   };
   const manifestPath = path.join(runDir, "run.json");
@@ -249,9 +256,29 @@ async function runVerification() {
     const occupiedPids = getListenerPids(config.port);
     if (occupiedPids.length) throw new Error(`Refusing to use occupied port ${config.port}; listener PID(s): ${occupiedPids.join(", ")}. Choose another --port.`);
 
+    if (config.suite === "site") {
+      const buildStartedAt = new Date().toISOString();
+      try {
+        const buildOutput = runCommand(process.execPath, [astroCli, "build"], { timeout: 240000, maxBuffer: 32 * 1024 * 1024 });
+        fs.writeFileSync(path.join(runDir, "build.stdout.log"), buildOutput, "utf8");
+        fs.writeFileSync(path.join(runDir, "build.stderr.log"), "", "utf8");
+        manifest.build = { status: "passed", startedAt: buildStartedAt, finishedAt: new Date().toISOString() };
+      } catch (error) {
+        fs.writeFileSync(path.join(runDir, "build.stdout.log"), error.stdout?.toString() ?? "", "utf8");
+        fs.writeFileSync(path.join(runDir, "build.stderr.log"), error.stderr?.toString() ?? error.message, "utf8");
+        manifest.build = { status: "failed", startedAt: buildStartedAt, finishedAt: new Date().toISOString() };
+        writeJson(manifestPath, manifest);
+        throw new Error(`Static build failed (exit ${error.status ?? 1}); see ${path.join(runDir, "build.stderr.log")}`);
+      }
+      for (const required of ["index.html", "404.html", "en/index.html", "ru/index.html", "en/cv/index.html", "ru/cv/index.html"]) {
+        if (!fs.existsSync(path.join(projectDir, "dist", required))) throw new Error(`Build output is missing dist/${required}`);
+      }
+      console.log(`BUILD ${JSON.stringify({ status: "passed", suite: config.suite })}`);
+    }
+
     const stdoutFd = fs.openSync(path.join(runDir, "server.stdout.log"), "w");
     const stderrFd = fs.openSync(path.join(runDir, "server.stderr.log"), "w");
-    child = spawn(process.execPath, [astroCli, "dev", "--host", "0.0.0.0", "--port", String(config.port), "--strictPort"], {
+    child = spawn(process.execPath, serverArgs, {
       cwd: projectDir,
       env: { ...process.env, HOST: "0.0.0.0", PORT: String(config.port) },
       windowsHide: true,
@@ -287,7 +314,8 @@ async function runVerification() {
     for (const [name, value] of Object.entries(selectorEnv)) dockerArgs.push("-e", `${name}=${value}`);
     dockerArgs.push(containerName, "node", `${stagingDir}/verify-browser.cjs`, `--base-url=${config.baseUrl}`, `--artifact-dir=${stagingDir}/browser`, `--suite=${config.suite}`);
     try {
-      const browserOutput = runCommand("docker", dockerArgs, { timeout: 120000, maxBuffer: 8 * 1024 * 1024 });
+      const browserTimeout = config.suite === "site" ? 240000 : 120000;
+      const browserOutput = runCommand("docker", dockerArgs, { timeout: browserTimeout, maxBuffer: 16 * 1024 * 1024 });
       fs.writeFileSync(path.join(runDir, "browser.stdout.log"), browserOutput, "utf8");
       browserExitCode = 0;
       console.log(browserOutput.trim());
@@ -349,11 +377,14 @@ async function runVerification() {
   console.log(`CLEANUP ${JSON.stringify({ serverPid: child?.pid ?? null, serverExitCode: manifest.serverExitCode, serverSignalCode: manifest.serverSignalCode, serverStopped: manifest.serverStopped, ownedListenerAfterStop: manifest.ownedListenerAfterStop, stagingRemoved: stagingPrepared && !manifest.stagingCleanupError, artifacts: runDir, browserArtifactsCopied: copiedBrowserArtifacts })}`);
   if (failure) throw failure;
   if (!copiedBrowserArtifacts) throw new Error(`Browser artifacts were not copied to ${runDir}`);
-  for (const required of ["report.json", "landing-page.png", "aria-snapshot.txt", "trace.zip"]) {
+  const requiredEvidence = config.suite === "site"
+    ? ["report.json", "aria-snapshot.txt", "trace.zip", "screenshots/home-en.png", "screenshots/home-ru.png", "screenshots/article-en.png", "screenshots/article-ru.png", "screenshots/cv-en.png", "screenshots/cv-ru.png", "screenshots/theme-dark.png", "screenshots/mobile-home.png", "screenshots/mobile-article.png", "screenshots/not-found.png", "screenshots/mermaid.png", "screenshots/mermaid-error.png"]
+    : ["report.json", "landing-page.png", "aria-snapshot.txt", "trace.zip"];
+  for (const required of requiredEvidence) {
     const artifactPath = path.join(runDir, "browser", required);
     if (!fs.existsSync(artifactPath) || fs.statSync(artifactPath).size === 0) throw new Error(`Expected evidence artifact is missing or empty: ${artifactPath}`);
   }
-  console.log(`PASS ${JSON.stringify({ runId, artifacts: runDir, evidence: ["report.json", "landing-page.png", "aria-snapshot.txt", "trace.zip"], serverPid: child.pid, serverStopped: manifest.serverStopped, ownedListenerAfterStop: manifest.ownedListenerAfterStop })}`);
+  console.log(`PASS ${JSON.stringify({ runId, artifacts: runDir, evidence: requiredEvidence, serverPid: child.pid, serverStopped: manifest.serverStopped, ownedListenerAfterStop: manifest.ownedListenerAfterStop })}`);
 }
 
 if (mode === "doctor") {

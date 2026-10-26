@@ -1,58 +1,61 @@
 ---
 name: verify-personal-site
-description: "Drive and capture evidence from Alex Kutkin's Astro landing page."
+description: "Build Alex Kutkin's Astro site and prove every public route in Chromium."
 disable-model-invocation: true
 ---
 
 # Verify Alex Kutkin's personal site
 
-Use this skill to prove the current landing page scaffold in a real Chromium browser. The current app has one user route, `/`; the optional Astro documentation link leaves the app. The `foundation` suite checks stable app identity metadata, a non-empty document title, a visible primary heading, and a keyboard-focusable link. It does not assume future site sections.
+Prove the built static site in a real Chromium browser. The `site` suite covers both locales, pagination, all eleven articles, the CV, the 404 page, RSS, themes, keyboard focus, Mermaid, and mobile layout.
 
 ## Launch
 
 From the repository root, run:
 
 ```sh
-node scripts/verify.mjs --suite foundation --port 4321
+node scripts/verify.mjs --suite site --port 4321
 ```
 
-This launches the installed Astro CLI from this checkout on `0.0.0.0:4321` with strict port handling, using `node_modules/astro/bin/astro.mjs dev --host 0.0.0.0 --port 4321 --strictPort`. Change `--port` to choose a different port. The browser URL defaults to `http://host.docker.internal:<port>`; set `--base-url` to another HTTP origin on that same port when the container's route to the host differs. `BASE_URL` and `PORT` environment variables are also accepted.
+The `site` suite runs `astro build`, starts the built site with `astro preview --host 0.0.0.0 --port 4321 --ignore-lock`, and drives it through the container. It refuses an occupied port and only stops the child PID it started. Change `--port` to choose a different port; `BASE_URL` and `PORT` are also accepted. The browser URL defaults to `http://host.docker.internal:<port>`.
 
-The script refuses an occupied port before launch. It waits for the doctor checks to prove that the server PID owns the listener and serves this app's identity, title, and heading. It then drives Chromium and cleans up the server it started before returning. No separate database, seed data, authentication, or build step is required. The project is an Astro dev server, so startup serves the current source scaffold directly.
+The `foundation` suite still exists as a quick scaffold check; it serves the dev server and checks only app identity, title, heading, and keyboard focus. Use `site` for anything user-visible.
 
-Run the host script from PowerShell or Git Bash on Windows. The script uses the existing `playwright-sandbox-1` Docker container through `docker exec` and `docker cp`; the container already has Node, `@playwright/test`, and Chromium. If you need an interactive container shell, use `docker exec -it playwright-sandbox-1 bash` from the Windows host. The harness does not start or stop that container.
+The script waits for the doctor to prove that the server PID owns the listener and serves this app, then runs the browser drive and copies the evidence. The browser runs in the existing `playwright-sandbox-1` container through `docker exec` and `docker cp`; the harness neither starts nor stops the container.
 
 ## Doctor
 
-The default run always performs a read-only doctor check before browser drive. It requires the recorded Astro PID to be alive, the PID command line to match this port's Astro dev server, that PID to own the configured TCP listener, and the local page to return HTTP 200 with the expected `application-name` metadata plus non-empty title and H1. This scaffold has no separate revision marker or login, so the app identity and the checked-out package identity are its version/build signals.
-
-For a live run, copy the `runId` printed by the script and inspect it from a second host terminal:
+The doctor is read-only. It checks the recorded PID, the matching Astro `preview` (or `dev` for `foundation`) command, port ownership, HTTP 200 at `/`, and the expected app identity, title, and H1. For a live run:
 
 ```sh
 node scripts/verify.mjs doctor --run-id <runId>
 ```
 
-The doctor writes no app state. It prints each check and exits non-zero if the instance is not worth driving. A completed run has already stopped its server, so run doctor while that run is still active.
+A completed run has already stopped its server, so run the doctor while the run is active.
 
 ## Drive
 
-The host orchestrator copies `scripts/verify-browser.cjs` to a unique `/tmp/alexkutkin-personal-site-<runId>/` directory in the existing container, then runs it against the host server. The browser proof opens `/`, reads app identity/title/heading, then uses keyboard `Tab` until a visible link receives focus. It does not call test-only endpoints or application setters.
+The host copies `scripts/verify-browser.cjs` into `/tmp/alexkutkin-personal-site-<runId>/` in the container. The site suite checks:
 
-The current stable selector defaults are `meta[name="application-name"]`, `main h1`, and `a[href]`. Adjust them with `VERIFY_APP_IDENTITY_SELECTOR`, `VERIFY_HEADING_SELECTOR`, and `VERIFY_LINK_SELECTOR`; set `VERIFY_EXPECTED_APP_NAME` when the app identity changes. The same values are passed into the browser process by the host orchestrator. The suite argument is explicit so a later site-wide suite can be added without changing the foundation contract.
+- root redirect by saved locale, browser language, and the no-JavaScript locale links;
+- ten notes on page 1, one on page 2, localized dates, pagination, and identical article slugs in both locales;
+- every route for document language, title, description, app identity, one visible H1, Open Graph, canonical URL, RSS link, footer, skip link, and images;
+- home contacts and projects, CV sections, the complex article (nested lists, quote, table, figure, long link, code, valid and broken Mermaid), and the custom 404;
+- language switch keeping the current page and slug, theme choice persistence, keyboard focus outlines, mobile overflow, and RSS full text;
+- an internal-link audit plus screenshots and an ARIA snapshot.
+
+Failures collect in `report.json` and the process exits non-zero.
 
 ## Evidence
 
-Each run writes to `artifacts/verification/<runId>/`. The folder is ignored by Git and remains after cleanup. The browser folder contains `report.json` (actions and observed results), `landing-page.png`, `aria-snapshot.txt`, and `trace.zip`. The run folder also records the doctor result, server PID, Astro/Playwright versions, server stdout/stderr, and browser logs. The report and screenshot capture both the visit and the resulting page state; the trace preserves the browser actions for review.
-
-The current page is read-only, so it has no application data mutation to verify. If future features add a mutation, extend the matching feature recipe to confirm the changed value through a separate user-visible or read-only view. Keep real browser actions and their observable results in the evidence.
+Each run writes to `artifacts/verification/<runId>/`, which is ignored by Git. The browser folder contains `report.json`, `aria-snapshot.txt`, `trace.zip`, and `screenshots/` for all routes, themes, Mermaid, keyboard focus, and mobile. The run folder also records the build log, doctor result, server PID, versions, server logs, and browser logs. Keep the folder until the evidence has been reviewed.
 
 ## Cleanup
 
-The orchestrator stops only the child PID it launched, removes only its unique `/tmp/alexkutkin-personal-site-<runId>/` container staging directory, and keeps the copied evidence under `artifacts/verification/<runId>/`. It does not kill processes by name, remove the host artifact folder, or change the container lifecycle. If a run fails, it still attempts this cleanup and preserves any browser artifacts already created.
+The orchestrator stops only its child PID and removes only its unique container staging directory. It does not kill by name, delete host artifacts, or change the container lifecycle. Failed runs still attempt this cleanup and keep any artifacts created.
 
 ## Helpers
 
-- `scripts/verify.mjs` is the host launcher, doctor, browser coordinator, artifact copier, and cleanup routine. Run it with Node as shown above.
-- `scripts/verify-browser.cjs` is the Playwright browser helper. The host script copies and invokes it inside `playwright-sandbox-1`; to run it manually, first copy it into the container and pass `--base-url`, `--artifact-dir`, and `--suite=foundation`.
+- `scripts/verify.mjs` is the host launcher, doctor, build/preview coordinator, evidence copier, and cleanup routine.
+- `scripts/verify-browser.cjs` is the Playwright helper. The host copies and runs it inside `playwright-sandbox-1` with `--base-url`, `--artifact-dir`, and `--suite`.
 
-Read [the feature map](features/README.md) before driving a mapped journey. Use `verification maintain` when the app's routes or visible behavior change.
+Read [the feature map](features/README.md) before driving a mapped journey.
