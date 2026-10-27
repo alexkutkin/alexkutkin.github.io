@@ -2,7 +2,7 @@ import { defineConfig } from "astro/config";
 import sitemap from "@astrojs/sitemap";
 
 export default defineConfig({
-  site: "https://alexkutkin.github.io",
+  site: "https://alexkutkin.com",
   integrations: [sitemap({
     filter: (page) => new URL(page).pathname !== "/404.html",
   })],
