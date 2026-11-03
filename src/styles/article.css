@@ -1,6 +1,7 @@
 .article {
   max-inline-size: var(--measure);
   margin-inline: auto;
+  font-size: var(--text-base);
 }
 
 .article__back {
@@ -39,16 +40,16 @@
 
 .article__title {
   margin: 0;
-  font-family: var(--font-serif);
-  font-size: var(--text-3xl);
-  line-height: 1.12;
+  font-family: var(--font-sans);
+  font-size: var(--text-2xl);
+  line-height: 1.2;
 }
 
 .article__lead {
   margin: 0;
-  font-family: var(--font-serif);
-  font-size: var(--text-md);
-  line-height: 1.4;
+  font-family: var(--font-sans);
+  font-size: var(--text-base);
+  line-height: 1.5;
 }
 
 .article__body {
@@ -66,34 +67,26 @@
 }
 
 .prose > * + * {
-  margin-block-start: var(--space-lg);
+  margin-block-start: 1em;
 }
 
 .prose h2 {
-  font-family: var(--font-serif);
-  font-size: var(--text-lg);
+  margin-block-start: 2em;
+  font-family: var(--font-sans);
+  font-size: var(--text-md);
   line-height: 1.2;
 }
 
 .prose h3 {
-  font-family: var(--font-serif);
-  font-size: var(--text-md);
+  margin-block-start: 1.5em;
+  font-family: var(--font-sans);
+  font-size: var(--text-base);
   line-height: 1.2;
 }
 
 .prose h2 + *,
 .prose h3 + * {
   margin-block-start: var(--space-sm);
-}
-
-.prose p,
-.prose ul,
-.prose ol,
-.prose blockquote,
-.prose table,
-.prose figure,
-.prose pre {
-  margin: 0;
 }
 
 .prose ul,
@@ -120,9 +113,9 @@
 }
 
 .prose blockquote {
-  font-family: var(--font-serif);
-  font-size: var(--text-md);
-  line-height: 1.4;
+  font-family: var(--font-sans);
+  font-size: var(--text-base);
+  line-height: 1.5;
 }
 
 .prose blockquote::before {

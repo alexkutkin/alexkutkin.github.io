@@ -2,7 +2,6 @@
   color-scheme: light;
 
   --font-sans: "Manrope", system-ui, -apple-system, "Segoe UI", sans-serif;
-  --font-serif: "Lora", Georgia, "Times New Roman", serif;
   /* Mono serves only code; dates and utility labels stay in the sans, so the system stack saves a third family (~31 KB per page). */
   --font-mono: ui-monospace, "SFMono-Regular", Consolas, monospace;
 
@@ -40,7 +39,7 @@
   /* Fluid type over the same 20rem–80rem interval. */
   --text-xs: 0.75rem;
   --text-sm: 0.875rem;
-  --text-base: clamp(1rem, 0.958333rem + 0.208333vw, 1.125rem);
+  --text-base: 1rem;
   --text-md: clamp(1.125rem, 1.083333rem + 0.208333vw, 1.25rem);
   --text-lg: clamp(1.25rem, 1.166667rem + 0.416667vw, 1.5rem);
   --text-xl: clamp(1.5rem, 1.416667rem + 0.416667vw, 1.75rem);
