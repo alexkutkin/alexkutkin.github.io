@@ -17,8 +17,9 @@ node scripts/verify.mjs --suite site --port 4330
 
 The harness writes its verification build into that run's
 `artifacts/verification/<run-id>/site` directory and serves it from there.
-It does not overwrite the public `dist` output. The public build currently has
-one article in each language: `why-i-built-pastehatch`.
+It does not overwrite the public `dist` output. The expected articles come from
+an independent inventory of published and fixture source files, so new
+publications do not require changing article counts in the browser checks.
 
 After a normal build, check that only published articles reached HTML and RSS:
 

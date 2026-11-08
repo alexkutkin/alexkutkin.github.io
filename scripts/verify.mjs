@@ -5,6 +5,7 @@ import { once } from "node:events";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { readArticleInventory } from "./article-inventory.mjs";
 
 const projectDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const containerName = "playwright-sandbox-1";
@@ -88,7 +89,7 @@ async function inspectInstance(manifest) {
   const alive = Number.isInteger(manifest.serverPid) && isProcessAlive(manifest.serverPid);
   checks.push({ name: "server process is running", passed: alive, detail: `PID ${manifest.serverPid ?? "missing"}` });
 
-  const serverMode = manifest.serverMode ?? "dev";
+  const serverMode = manifest.serverMode;
   const commandLine = alive ? getProcessCommandLine(manifest.serverPid) : "";
   const commandMatches = commandLine.includes("astro")
     && commandLine.includes(serverMode)
@@ -184,7 +185,7 @@ function writeJson(filePath, value) {
 }
 
 function createRunId() {
-  const timestamp = new Date().toISOString().replace(/[-:.]/g, "").replace(/Z$/, "Z");
+  const timestamp = new Date().toISOString().replace(/[-:.]/g, "");
   return `${timestamp}-${process.pid}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
@@ -318,6 +319,18 @@ async function runVerification() {
     const dockerArgs = ["exec"];
     for (const [name, value] of Object.entries(selectorEnv)) dockerArgs.push("-e", `${name}=${value}`);
     dockerArgs.push(containerName, "node", `${stagingDir}/verify-browser.cjs`, `--base-url=${config.baseUrl}`, `--artifact-dir=${stagingDir}/browser`, `--suite=${config.suite}`);
+    if (config.suite === "site") {
+      const { published, fixtures } = readArticleInventory();
+      const articles = Object.fromEntries(Object.keys(published).map((lang) => {
+        const slugs = [...published[lang], ...fixtures[lang]].sort();
+        if (new Set(slugs).size !== slugs.length) throw new Error(`${lang}: article fixtures overlap published slugs`);
+        return [lang, slugs];
+      }));
+      const contentManifest = path.join(runDir, "content-manifest.json");
+      writeJson(contentManifest, articles);
+      runCommand("docker", ["cp", contentManifest, `${containerName}:${stagingDir}/content-manifest.json`]);
+      dockerArgs.push(`--content-manifest=${stagingDir}/content-manifest.json`);
+    }
     try {
       const browserTimeout = config.suite === "site" ? 240000 : 120000;
       const browserOutput = runCommand("docker", dockerArgs, { timeout: browserTimeout, maxBuffer: 16 * 1024 * 1024 });

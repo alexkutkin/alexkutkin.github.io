@@ -35,6 +35,54 @@ const { labels, label } = Astro.props;
 </div>
 
 <script>
+  import { themeChangeEvent } from "../lib/theme";
+
+  const themeKey = "theme";
+  const root = document.documentElement;
+  const themeInputs = Array.from(
+    document.querySelectorAll<HTMLInputElement>('input[name="theme"]'),
+  );
+  const storedTheme = () => {
+    try {
+      return localStorage.getItem(themeKey) ?? "system";
+    } catch (error) {
+      return "system";
+    }
+  };
+  const syncThemeInputs = () => {
+    const mode = storedTheme();
+    for (const input of themeInputs) {
+      input.checked = input.value === mode;
+    }
+  };
+  const applyTheme = (mode: string) => {
+    if (mode === "system") {
+      root.removeAttribute("data-theme");
+      try {
+        localStorage.removeItem(themeKey);
+      } catch (error) {}
+    } else {
+      root.dataset.theme = mode;
+      try {
+        localStorage.setItem(themeKey, mode);
+      } catch (error) {}
+    }
+    syncThemeInputs();
+    document.dispatchEvent(new CustomEvent(themeChangeEvent));
+  };
+  for (const input of themeInputs) {
+    input.addEventListener("change", () => {
+      if (input.checked) applyTheme(input.value);
+    });
+  }
+  const colorScheme = window.matchMedia("(prefers-color-scheme: dark)");
+  colorScheme.addEventListener("change", () => {
+    if (storedTheme() === "system") {
+      document.dispatchEvent(new CustomEvent(themeChangeEvent));
+    }
+  });
+  syncThemeInputs();
+
   const control = document.querySelector<HTMLElement>(".theme-control");
   const toggle = control?.querySelector<HTMLButtonElement>(".theme-control__toggle");
   const close = () => toggle?.setAttribute("aria-expanded", "false");

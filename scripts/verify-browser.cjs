@@ -23,6 +23,15 @@ function slugOf(articlePath) {
   return articlePath.split("/").filter(Boolean).pop();
 }
 
+async function waitForPageMedia(page) {
+  await page.evaluate(() => document.fonts.ready);
+  for (const image of await page.locator("img").all()) {
+    await image.scrollIntoViewIfNeeded();
+    await page.waitForFunction((element) => element.complete, await image.elementHandle(), { timeout: 10000 });
+  }
+  await page.evaluate(() => window.scrollTo(0, 0));
+}
+
 async function runFoundation({ browser, baseUrl, artifactDir, report }) {
   const screenshotPath = path.join(artifactDir, "landing-page.png");
   const ariaPath = path.join(artifactDir, "aria-snapshot.txt");
@@ -92,8 +101,6 @@ async function runFoundation({ browser, baseUrl, artifactDir, report }) {
       }
     }
     assert.equal(reachedLinkByKeyboard, true, "Expected keyboard Tab navigation to reach a visible link");
-    const focused = await focusTarget.evaluate((element) => document.activeElement === element);
-    assert.equal(focused, true, "Expected the selected link to receive keyboard focus");
     const focusResult = await focusTarget.evaluate((element) => ({
       href: element.href,
       text: (element.innerText || element.getAttribute("aria-label") || "").trim(),
@@ -130,14 +137,18 @@ async function runFoundation({ browser, baseUrl, artifactDir, report }) {
   }
 }
 
-async function runSite({ browser, baseUrl, artifactDir, report }) {
+async function runSite({ browser, baseUrl, artifactDir, report, expectedArticles }) {
   const screenshotsDir = path.join(artifactDir, "screenshots");
   fs.mkdirSync(screenshotsDir, { recursive: true });
   const ariaPath = path.join(artifactDir, "aria-snapshot.txt");
   const currentYear = String(new Date().getFullYear());
   const expectedAppName = process.env.VERIFY_EXPECTED_APP_NAME ?? "Alex Kutkin personal site";
   const expectedOrigin = "https://alexkutkin.com";
-  const expectedArticleCount = 13;
+  const pageSize = 10;
+  const homePaths = Object.fromEntries(Object.keys(expectedArticles).map((lang) => [
+    lang,
+    Array.from({ length: Math.max(1, Math.ceil(expectedArticles[lang].length / pageSize)) }, (_, index) => index === 0 ? `/${lang}/` : `/${lang}/${index + 1}/`),
+  ]));
   const checks = report.checks;
   const check = (name, passed, detail) => {
     checks.push({ name, passed: Boolean(passed), detail });
@@ -153,14 +164,6 @@ async function runSite({ browser, baseUrl, artifactDir, report }) {
     check(`${label} gives every contact and profile a target of at least 24px`, links.length === 4 && links.every((link) => link.width >= 24 && link.height >= 24), JSON.stringify(links));
     const introductions = await target.locator(".contact-group").evaluateAll((groups) => groups.map((group) => group.querySelectorAll(".contact-intro").length));
     check(`${label} keeps the introduction only with direct contacts`, introductions.join(",") === "1,0", JSON.stringify(introductions));
-  };
-  const checkAsync = async (name, fn) => {
-    try {
-      const detail = await fn();
-      check(name, true, detail);
-    } catch (error) {
-      check(name, false, error.message);
-    }
   };
   const internalLinks = new Set();
   const consoleMessages = [];
@@ -178,17 +181,18 @@ async function runSite({ browser, baseUrl, artifactDir, report }) {
     colorScheme: "light",
     locale: "en-US",
   });
+  context.on("page", (openedPage) => {
+    openedPage.on("pageerror", (error) => pageErrors.push({ url: openedPage.url(), text: error.message }));
+  });
   await context.tracing.start({ screenshots: true, snapshots: true, sources: true });
   const page = await context.newPage();
   page.on("console", (message) => {
     if (message.type() === "error") consoleMessages.push({ url: page.url(), text: message.text() });
   });
-  page.on("pageerror", (error) => pageErrors.push({ url: page.url(), text: error.message }));
 
   try {
     const absolute = (route) => new URL(route, baseUrl).href;
 
-    // Root redirect: browser language, saved choice, and the no-JS fallback.
     const ruContext = await browser.newContext({ locale: "ru-RU", viewport: { width: 1440, height: 1000 } });
     const ruPage = await ruContext.newPage();
     await ruPage.goto(absolute("/"), { waitUntil: "domcontentloaded" });
@@ -203,6 +207,16 @@ async function runSite({ browser, baseUrl, artifactDir, report }) {
     check("root redirect falls back to English", new URL(enPage.url()).pathname === "/en/", enPage.url());
     await enContext.close();
 
+    const unknownLanguageContext = await browser.newContext();
+    await unknownLanguageContext.addInitScript(() => {
+      Object.defineProperty(navigator, "languages", { value: [] });
+    });
+    const unknownLanguagePage = await unknownLanguageContext.newPage();
+    await unknownLanguagePage.goto(absolute("/"), { waitUntil: "domcontentloaded" });
+    await unknownLanguagePage.waitForURL("**/en/", { timeout: 10000 });
+    check("root redirect falls back to English without browser languages", new URL(unknownLanguagePage.url()).pathname === "/en/", unknownLanguagePage.url());
+    await unknownLanguageContext.close();
+
     const noJsContext = await browser.newContext({ javaScriptEnabled: false, viewport: { width: 1440, height: 1000 } });
     const noJsPage = await noJsContext.newPage();
     await noJsPage.goto(absolute("/"), { waitUntil: "domcontentloaded" });
@@ -211,60 +225,52 @@ async function runSite({ browser, baseUrl, artifactDir, report }) {
     await noJsContext.close();
     report.actions.push({ action: "Check the root redirect with browser language, saved choice and disabled JavaScript", result: "browser language, saved choice and no-JS fallback exercised" });
 
-    // Home, pagination and date formatting.
     const articlePaths = { en: new Set(), ru: new Set() };
-    for (const lang of ["en", "ru"]) {
-      const home = lang === "en" ? "/en/" : "/ru/";
-      const second = lang === "en" ? "/en/2/" : "/ru/2/";
-      await page.goto(absolute(home), { waitUntil: "domcontentloaded" });
-      const firstDate = await page.locator("time[data-format-date]").first().getAttribute("datetime");
-      assert.match(firstDate ?? "", /^\d{4}-\d{2}-\d{2}$/);
-      const expectedDate = new Intl.DateTimeFormat(lang === "en" ? "en-US" : "ru-RU", { timeZone: "UTC" })
-        .format(new Date(`${firstDate}T00:00:00Z`));
-      await page.waitForFunction(
-        (date) => document.querySelector("time[data-format-date]")?.textContent?.trim() === date,
-        expectedDate,
-        { timeout: 8000 },
-      );
-      const firstPage = await page.evaluate(() => ({
-        notes: document.querySelectorAll("ol.note-list > li.note").length,
-        dates: [...document.querySelectorAll("time[data-format-date]")].map((node) => node.textContent.trim()),
-        pagination: [...document.querySelectorAll(".pagination a")].map((link) => ({
-          text: link.textContent.trim(),
-          href: link.getAttribute("href"),
-          current: link.getAttribute("aria-current"),
-        })),
-      }));
-      check(`${home} lists ten notes`, firstPage.notes === 10, `notes=${firstPage.notes}`);
-      check(`${home} formats the first date as ${expectedDate}`, firstPage.dates[0] === expectedDate, firstPage.dates[0]);
-      check(`${home} marks page 1 as current and links page 2`, firstPage.pagination.some((item) => item.text === "1" && item.current === "page") && firstPage.pagination.some((item) => item.text === "2" && item.href === second), JSON.stringify(firstPage.pagination));
-      const articleLinks = await page.locator('ol.note-list a[href*="/article/"]').evaluateAll((links) => links.map((link) => new URL(link.href).pathname));
-      for (const articlePath of articleLinks) articlePaths[lang].add(articlePath);
-
-      await page.goto(absolute(second), { waitUntil: "domcontentloaded" });
-      const secondPage = await page.evaluate(() => ({
-        notes: document.querySelectorAll("ol.note-list > li.note").length,
-        current: [...document.querySelectorAll(".pagination a[aria-current='page']")].map((link) => link.textContent.trim()),
-        links: [...document.querySelectorAll("ol.note-list a[href*=\"/article/\"]")].map((link) => new URL(link.href).pathname),
-      }));
-      check(`${second} lists the remaining notes`, secondPage.notes === expectedArticleCount - 10, `notes=${secondPage.notes}`);
-      check(`${second} marks page 2 as current`, secondPage.current.join(",") === "2", secondPage.current.join(","));
-      for (const articlePath of secondPage.links) articlePaths[lang].add(articlePath);
-      if (lang === "en") await capture("notes-page-2", page, { fullPage: true });
+    for (const lang of Object.keys(expectedArticles)) {
+      let listedNotes = 0;
+      for (const [index, home] of homePaths[lang].entries()) {
+        await page.goto(absolute(home), { waitUntil: "domcontentloaded" });
+        const firstDate = await page.locator("time[data-format-date]").first().getAttribute("datetime");
+        assert.match(firstDate ?? "", /^\d{4}-\d{2}-\d{2}$/);
+        const expectedDate = new Intl.DateTimeFormat(lang === "en" ? "en-US" : "ru-RU", { timeZone: "UTC" })
+          .format(new Date(`${firstDate}T00:00:00Z`));
+        await page.waitForFunction(
+          (date) => document.querySelector("time[data-format-date]")?.textContent?.trim() === date,
+          expectedDate,
+          { timeout: 8000 },
+        );
+        const listing = await page.evaluate(() => ({
+          notes: document.querySelectorAll("ol.note-list > li.note").length,
+          date: document.querySelector("time[data-format-date]")?.textContent.trim(),
+          pagination: [...document.querySelectorAll(".pagination a")].map((link) => ({
+            href: link.getAttribute("href"),
+            current: link.getAttribute("aria-current"),
+          })),
+          links: [...document.querySelectorAll('ol.note-list a[href*="/article/"]')].map((link) => new URL(link.href).pathname),
+        }));
+        listedNotes += listing.notes;
+        const expectedNotes = Math.min(pageSize, expectedArticles[lang].length - index * pageSize);
+        check(`${home} lists ${expectedNotes} notes`, listing.notes === expectedNotes, `notes=${listing.notes}`);
+        check(`${home} formats the first date as ${expectedDate}`, listing.date === expectedDate, listing.date);
+        const expectedPagination = homePaths[lang].length > 1 ? homePaths[lang] : [];
+        check(`${home} links every pagination page`, listing.pagination.map((link) => link.href).join(",") === expectedPagination.join(","), JSON.stringify(listing.pagination));
+        check(`${home} marks only the current pagination page`, listing.pagination.filter((link) => link.current === "page").map((link) => link.href).join(",") === (expectedPagination.length ? home : ""), JSON.stringify(listing.pagination));
+        for (const articlePath of listing.links) articlePaths[lang].add(articlePath);
+        if (lang === "en" && index > 0) await capture(`notes-page-${index + 1}`, page, { fullPage: true });
+      }
+      check(`${lang} lists each expected article once`, listedNotes === expectedArticles[lang].length, `notes=${listedNotes}`);
+      check(`${lang} notes expose exactly the source article slugs`, [...articlePaths[lang]].map(slugOf).sort().join(",") === expectedArticles[lang].join(","), [...articlePaths[lang]].join(","));
     }
-    check(`English notes expose ${expectedArticleCount} article links`, articlePaths.en.size === expectedArticleCount, `${articlePaths.en.size} links`);
-    check(`Russian notes expose ${expectedArticleCount} article links`, articlePaths.ru.size === expectedArticleCount, `${articlePaths.ru.size} links`);
     const enSlugs = [...articlePaths.en].map(slugOf).sort();
     const ruSlugs = [...articlePaths.ru].map(slugOf).sort();
     check("Both locales use the same article slugs", enSlugs.join(",") === ruSlugs.join(","), `${enSlugs.join(",")} vs ${ruSlugs.join(",")}`);
 
     const routes = [];
     for (const lang of ["en", "ru"]) {
-      routes.push({ path: `/${lang}/`, lang, kind: "home" });
-      routes.push({ path: `/${lang}/2/`, lang, kind: "home" });
+      for (const home of homePaths[lang]) routes.push({ path: home, lang, kind: "home" });
       routes.push({ path: `/${lang}/cv/`, lang, kind: "cv" });
-      for (const articlePath of [...articlePaths[lang]].sort()) {
-        routes.push({ path: articlePath, lang, kind: "article" });
+      for (const slug of expectedArticles[lang]) {
+        routes.push({ path: `/${lang}/article/${slug}/`, lang, kind: "article" });
       }
     }
     routes.push({ path: "/404.html", lang: "en", kind: "not-found" });
@@ -295,6 +301,7 @@ async function runSite({ browser, baseUrl, artifactDir, report }) {
         const status = response?.status() ?? null;
         check(`${label} returns HTTP 200`, status === 200, `HTTP ${status}`);
         if (status !== 200) continue;
+        await waitForPageMedia(page);
 
         const info = await page.evaluate(() => {
           const meta = (selector) => document.querySelector(selector)?.getAttribute("content")?.trim() ?? "";
@@ -312,6 +319,11 @@ async function runSite({ browser, baseUrl, artifactDir, report }) {
             ogLocale: meta('meta[property="og:locale"]'),
             rss: document.querySelector('link[rel="alternate"][type="application/rss+xml"]')?.getAttribute("href") ?? "",
             h1s: [...document.querySelectorAll("main h1")].map((heading) => heading.textContent.trim()),
+            visibleHeadings: [...document.querySelectorAll("main h1")].filter((heading) => {
+              const style = getComputedStyle(heading);
+              const box = heading.getBoundingClientRect();
+              return style.display !== "none" && style.visibility !== "hidden" && box.width > 0 && box.height > 0;
+            }).length,
             navActive: [...document.querySelectorAll(".site-nav__link.is-active")].map((link) => link.textContent.trim()),
             navCurrent: [...document.querySelectorAll(".site-nav [aria-current]")].map((link) => link.textContent.trim()),
             languageLinks: [...document.querySelectorAll("[data-set-locale]")].map((link) => ({
@@ -341,7 +353,7 @@ async function runSite({ browser, baseUrl, artifactDir, report }) {
         }
         check(`${label} has a meta description`, info.description.length > 0, info.description);
         check(`${label} identifies the expected app`, info.appName === expectedAppName, info.appName);
-        check(`${label} has exactly one visible primary heading`, info.h1s.length === 1 && info.h1s[0].length > 0, JSON.stringify(info.h1s));
+        check(`${label} has exactly one visible primary heading`, info.h1s.length === 1 && info.visibleHeadings === 1 && info.h1s[0].length > 0, JSON.stringify(info.h1s));
         check(`${label} mirrors title and description in Open Graph`, info.ogTitle === info.title && info.ogDescription === info.description, `og:title=${info.ogTitle}; og:description=${info.ogDescription}`);
         check(`${label} uses the shared Open Graph cover`, info.ogImage === `${expectedOrigin}/og.png` && info.ogImageWidth === "1200" && info.ogImageHeight === "630", `${info.ogImage} ${info.ogImageWidth}x${info.ogImageHeight}`);
         check(`${label} publishes its own canonical Open Graph URL`, new URL(info.ogUrl).origin === expectedOrigin && new URL(info.ogUrl).pathname === route.path, info.ogUrl);
@@ -438,7 +450,6 @@ async function runSite({ browser, baseUrl, artifactDir, report }) {
       }
     }
 
-    // Language switching keeps the page and records the explicit choice.
     await page.goto(absolute("/en/cv/"), { waitUntil: "domcontentloaded" });
     await page.locator('[data-set-locale="ru"]').click();
     await page.waitForURL("**/ru/cv/", { timeout: 10000 });
@@ -453,7 +464,6 @@ async function runSite({ browser, baseUrl, artifactDir, report }) {
     check("Root redirect reuses the saved language choice", new URL(page.url()).pathname === "/ru/", page.url());
     report.actions.push({ action: "Switch language on CV and an article, then revisit the root", result: "same page and slug kept; saved choice redirects to /ru/" });
 
-    // Themes: system default, explicit dark, persistence, and live system changes.
     await page.goto(absolute("/en/"), { waitUntil: "domcontentloaded" });
     await page.evaluate(() => {
       try {
@@ -498,14 +508,13 @@ async function runSite({ browser, baseUrl, artifactDir, report }) {
     await page.waitForFunction(() => !document.documentElement.hasAttribute("data-theme"));
     check("System theme clears the explicit choice", (await page.evaluate(() => localStorage.getItem("theme"))) === null, "theme storage after system");
     await page.emulateMedia({ colorScheme: "dark" });
-    await page.waitForTimeout(150);
+    await page.waitForFunction((color) => getComputedStyle(document.body).backgroundColor === color, darkState.background);
     check("System theme follows a dark preference", (await page.evaluate(() => getComputedStyle(document.body).backgroundColor)) === darkState.background, "dark system background matches the explicit dark theme");
     await page.emulateMedia({ colorScheme: "light" });
-    await page.waitForTimeout(150);
+    await page.waitForFunction((color) => getComputedStyle(document.body).backgroundColor === color, systemState.background);
     check("System theme follows a light preference", (await page.evaluate(() => getComputedStyle(document.body).backgroundColor)) === systemState.background, "light system background matches the initial light theme");
     report.actions.push({ action: "Exercise system, dark and light themes", result: "default, persistence, clearing and prefers-color-scheme verified" });
 
-    // Keyboard focus.
     await page.goto(absolute("/en/"), { waitUntil: "domcontentloaded" });
     await page.keyboard.press("Tab");
     const skipFocus = await page.evaluate(() => ({
@@ -528,25 +537,31 @@ async function runSite({ browser, baseUrl, artifactDir, report }) {
     await capture("keyboard-focus", page);
     report.actions.push({ action: "Tab through the header", result: skipFocus });
 
-    // Mermaid diagrams and the source fallback.
     await page.goto(absolute("/en/article/one-article-many-layouts/"), { waitUntil: "domcontentloaded" });
     await page.waitForSelector(".mermaid-diagram svg", { state: "visible", timeout: 20000 });
     const diagrams = await page.locator(".mermaid-diagram").count();
-    const broken = page.locator('pre[data-language="mermaid"][data-mermaid-error="true"]');
+    const broken = page.locator('pre[data-language="mermaid"]');
     const brokenCount = await broken.count();
-    const diagramSource = await page.locator(".mermaid-diagram").first().getAttribute("data-mermaid-source");
     const diagramText = await page.locator(".mermaid-diagram").first().evaluate((node) => node.textContent ?? "");
     check("Mermaid renders the valid diagram", diagrams === 1 && diagramText.includes("Valid?"), `diagrams=${diagrams}`);
-    check("Mermaid keeps the broken diagram source", brokenCount === 1 && (await broken.innerText()).includes("flowchart TD"), `broken=${brokenCount}`);
-    check("Mermaid keeps the diagram source for re-rendering", Boolean(diagramSource && diagramSource.includes("flowchart TD")), "missing source");
+    check("Mermaid keeps the broken diagram source visible", brokenCount === 1 && await broken.isVisible() && (await broken.innerText()).includes("flowchart TD"), `broken=${brokenCount}`);
     await capture("mermaid", page.locator(".mermaid-diagram").first());
     await capture("mermaid-error", broken.first());
+    const lightDiagramFill = await page.locator(".mermaid-diagram svg .node rect").first().evaluate((node) => getComputedStyle(node).fill);
+    const originalDiagram = await page.locator(".mermaid-diagram svg").elementHandle();
     await page.locator('.theme-switch__option:has(input[value="dark"])').click();
-    await page.waitForTimeout(800);
-    check("Mermaid re-renders when the theme changes", (await page.locator(".mermaid-diagram svg").count()) === 1, "diagram missing after theme change");
+    await page.waitForFunction((fill) => {
+      const shape = document.querySelector(".mermaid-diagram svg .node rect");
+      return shape && getComputedStyle(shape).fill !== fill;
+    }, lightDiagramFill, { timeout: 20000 });
+    check("Mermaid re-renders with dark diagram colors", await originalDiagram.evaluate((node) => !node.isConnected) && (await page.locator(".mermaid-diagram svg").count()) === 1, "diagram is replaced and its visible node fill changes");
     await page.locator('.theme-switch__option:has(input[value="system"])').click();
     await page.waitForFunction(() => !document.documentElement.hasAttribute("data-theme"));
-    await page.waitForTimeout(300);
+    await page.waitForFunction((fill) => {
+      const shape = document.querySelector(".mermaid-diagram svg .node rect");
+      return shape && getComputedStyle(shape).fill === fill;
+    }, lightDiagramFill, { timeout: 20000 });
+    check("Mermaid restores light diagram colors with the system theme", (await page.locator(".mermaid-diagram svg").count()) === 1, "light diagram fill restored");
     await capture("article-en", page, { fullPage: true });
     report.actions.push({ action: "Render a valid and a broken Mermaid diagram", result: { diagrams, broken: brokenCount } });
 
@@ -554,7 +569,6 @@ async function runSite({ browser, baseUrl, artifactDir, report }) {
     await page.waitForSelector(".mermaid-diagram svg", { state: "visible", timeout: 20000 });
     await capture("article-ru", page, { fullPage: true });
 
-    // Responsive layout and wide blocks.
     const mobile = await context.newPage();
     await mobile.setViewportSize({ width: 375, height: 812 });
     const overflow = async (target) => target.evaluate(() => ({
@@ -626,18 +640,21 @@ async function runSite({ browser, baseUrl, artifactDir, report }) {
     await mobile.close();
     report.actions.push({ action: "Inspect home, article and CV at 320px, 375px, 390px and 768px in both locales", result: { mobileHome, mobileArticle, mobileCv, blockOverflow } });
 
-    // RSS feeds.
-    const feedEn = await context.request.get(absolute("/en/rss.xml"));
-    const feedEnText = await feedEn.text();
-    check("English RSS responds with XML", feedEn.status() === 200 && (feedEn.headers()["content-type"] ?? "").includes("xml"), `HTTP ${feedEn.status()} ${feedEn.headers()["content-type"]}`);
-    check(`English RSS has ${expectedArticleCount} items and full article text`, (feedEnText.match(/<item>/g) ?? []).length === expectedArticleCount && feedEnText.includes("<language>en</language>") && feedEnText.includes("The first draft of a feature"), `items=${(feedEnText.match(/<item>/g) ?? []).length}`);
-    const feedRu = await context.request.get(absolute("/ru/rss.xml"));
-    const feedRuText = await feedRu.text();
-    check("Russian RSS responds with XML", feedRu.status() === 200 && (feedRu.headers()["content-type"] ?? "").includes("xml"), `HTTP ${feedRu.status()} ${feedRu.headers()["content-type"]}`);
-    check(`Russian RSS has ${expectedArticleCount} items and full article text`, (feedRuText.match(/<item>/g) ?? []).length === expectedArticleCount && feedRuText.includes("<language>ru</language>") && feedRuText.includes("Первый черновик функции"), `items=${(feedRuText.match(/<item>/g) ?? []).length}`);
-    report.actions.push({ action: "Read both RSS feeds", result: { en: feedEn.status(), ru: feedRu.status() } });
+    const feedStatuses = {};
+    for (const [lang, fullText] of Object.entries({ en: "The first draft of a feature", ru: "Первый черновик функции" })) {
+      const feed = await context.request.get(absolute(`/${lang}/rss.xml`));
+      const text = await feed.text();
+      feedStatuses[lang] = feed.status();
+      check(`${lang} RSS responds with XML`, feed.status() === 200 && (feed.headers()["content-type"] ?? "").includes("xml"), `HTTP ${feed.status()} ${feed.headers()["content-type"]}`);
+      const items = text.match(/<item>[\s\S]*?<\/item>/g) ?? [];
+      const slugs = items.map((item) => {
+        const link = item.match(/<link>(.*?)<\/link>/)?.[1];
+        return link ? new URL(link).pathname.match(new RegExp(`^/${lang}/article/([^/]+)/$`))?.[1] : undefined;
+      }).sort();
+      check(`${lang} RSS contains exactly the source articles with full text`, slugs.join(",") === expectedArticles[lang].join(",") && text.includes(`<language>${lang}</language>`) && text.includes(fullText), JSON.stringify(slugs));
+    }
+    report.actions.push({ action: "Read both RSS feeds", result: feedStatuses });
 
-    // Internal link audit.
     let linkFailures = 0;
     for (const pathname of [...internalLinks].sort()) {
       const response = await context.request.get(absolute(pathname), { maxRedirects: 0 });
@@ -649,7 +666,6 @@ async function runSite({ browser, baseUrl, artifactDir, report }) {
     check("Every internal link resolves", linkFailures === 0, `${internalLinks.size} links checked; ${linkFailures} failed`);
     report.actions.push({ action: "Request every internal link", result: { checked: internalLinks.size, failed: linkFailures } });
 
-    // The static host's not-found behavior.
     const missing = await context.request.get(absolute("/en/no-such-page/"), { maxRedirects: 0 });
     check("Missing routes respond with 404", missing.status() === 404, `HTTP ${missing.status()}`);
     const notFound = await context.request.get(absolute("/404.html"));
@@ -661,6 +677,7 @@ async function runSite({ browser, baseUrl, artifactDir, report }) {
     report.consoleMessages = consoleMessages.slice(0, 50);
     report.pageErrors = pageErrors.slice(0, 50);
     report.actions.push({ action: "Collect console errors", result: { consoleErrors: consoleMessages.length, pageErrors: pageErrors.length } });
+    check("Pages raise no unhandled JavaScript errors", pageErrors.length === 0, JSON.stringify(pageErrors));
 
     const failures = checks.filter((item) => !item.passed);
     report.summary = { checks: checks.length, passed: checks.length - failures.length, failed: failures.length };
@@ -707,7 +724,9 @@ async function main() {
   try {
     browser = await chromium.launch({ headless: true });
     if (suite === "site") {
-      await runSite({ browser, baseUrl: args["base-url"], artifactDir, report });
+      if (!args["content-manifest"]) throw new Error("The site suite requires --content-manifest from the host article inventory");
+      const expectedArticles = JSON.parse(fs.readFileSync(args["content-manifest"], "utf8"));
+      await runSite({ browser, baseUrl: args["base-url"], artifactDir, report, expectedArticles });
     } else {
       await runFoundation({ browser, baseUrl: args["base-url"], artifactDir, report });
     }

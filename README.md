@@ -2,7 +2,7 @@
 
 This is my personal site. I write notes here and keep my CV.
 
-Live: <https://alexkutkin.github.io/>
+Live: <https://alexkutkin.com/>
 
 Built with [Astro](https://astro.build/).
 

@@ -1,0 +1,20 @@
+---
+import type { GetStaticPaths, InferGetStaticPropsType } from "astro";
+import ArticleView from "../../../components/ArticleView.astro";
+import { locales } from "../../../site";
+import { articleSlug, getArticles } from "../../../lib/articles";
+
+export const getStaticPaths = (async () => {
+  return (await Promise.all(locales.map(async (lang) =>
+    (await getArticles(lang)).map((entry) => ({
+      params: { lang, slug: articleSlug(entry) },
+      props: { entry },
+    })),
+  ))).flat();
+}) satisfies GetStaticPaths;
+
+type Props = InferGetStaticPropsType<typeof getStaticPaths>;
+const { entry } = Astro.props;
+---
+
+<ArticleView entry={entry} />

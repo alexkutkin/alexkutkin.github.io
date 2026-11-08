@@ -1,0 +1,17 @@
+---
+import type { GetStaticPaths, InferGetStaticPropsType } from "astro";
+import { getEntry } from "astro:content";
+import CvView from "../../components/CvView.astro";
+import { locales } from "../../site";
+
+export const getStaticPaths = (async () => Promise.all(locales.map(async (lang) => {
+  const entry = await getEntry("cv", lang);
+  if (!entry) throw new Error(`Missing CV content for locale "${lang}"`);
+  return { params: { lang }, props: { entry } };
+}))) satisfies GetStaticPaths;
+
+type Props = InferGetStaticPropsType<typeof getStaticPaths>;
+const { entry } = Astro.props;
+---
+
+<CvView entry={entry} />

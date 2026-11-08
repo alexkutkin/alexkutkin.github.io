@@ -1,0 +1,21 @@
+---
+import type { GetStaticPaths, InferGetStaticPropsType } from "astro";
+import HomeView from "../../components/HomeView.astro";
+import { locales } from "../../site";
+import { getArticles } from "../../lib/articles";
+
+export const getStaticPaths = (async ({ paginate }) => {
+  return (await Promise.all(locales.map(async (lang) =>
+    paginate(await getArticles(lang), {
+      pageSize: 10,
+      params: { lang },
+      props: { lang },
+    }),
+  ))).flat();
+}) satisfies GetStaticPaths;
+
+type Props = InferGetStaticPropsType<typeof getStaticPaths>;
+const { page, lang } = Astro.props;
+---
+
+<HomeView page={page} lang={lang} />

@@ -2,17 +2,17 @@
 import LanguageSwitch from "./LanguageSwitch.astro";
 import LivingDot from "./LivingDot.astro";
 import ThemeSwitch from "./ThemeSwitch.astro";
-import type { Dictionary, Locale } from "../i18n";
+import { getDictionary, type Locale } from "../i18n";
 
 interface Props {
   lang: Locale;
   section: "home" | "cv" | "none";
   pathname: string;
-  t: Dictionary;
   showLanguageSwitch?: boolean;
 }
 
-const { lang, section, pathname, t, showLanguageSwitch = true } = Astro.props;
+const { lang, section, pathname, showLanguageSwitch = true } = Astro.props;
+const t = getDictionary(lang);
 const isHomePage =
   section === "home" && new RegExp(`^/${lang}/(?:\\d+/)?$`).test(pathname);
 ---

@@ -1,5 +1,6 @@
 ---
-import type { Dictionary, Locale } from "../i18n";
+import { getDictionary, type Locale } from "../i18n";
+import ArticleDate from "./ArticleDate.astro";
 
 interface Props {
   title: string;
@@ -7,17 +8,14 @@ interface Props {
   date: Date;
   href: string;
   lang: Locale;
-  t: Dictionary;
 }
 
-const { title, description, date, href, lang, t } = Astro.props;
-const isoDate = date.toISOString().slice(0, 10);
+const { title, description, date, href, lang } = Astro.props;
+const t = getDictionary(lang);
 ---
 
 <li class="note">
-  <time class="note__date" datetime={isoDate} data-format-date data-locale={lang}>
-    {isoDate}
-  </time>
+  <ArticleDate class="note__date" date={date} lang={lang} />
   <div class="note__content">
     <h3 class="note__title">
       <a href={href}>{title}</a>

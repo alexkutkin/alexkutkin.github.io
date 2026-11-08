@@ -1,6 +1,6 @@
 # Personal site verification map
 
-This map covers the built site: `/en/` and `/ru/` homes, pagination, eleven articles per locale, CV, RSS, the root redirect, and the custom 404 page.
+This map covers the isolated verification build: `/en/` and `/ru/` homes, pagination, all published and fixture articles, CV, RSS, the root redirect, and the custom 404 page.
 
 ## Baseline
 

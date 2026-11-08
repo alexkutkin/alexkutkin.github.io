@@ -6,7 +6,7 @@ disable-model-invocation: true
 
 # Verify Alex Kutkin's personal site
 
-Prove the built static site in a real Chromium browser. The `site` suite covers both locales, pagination, all eleven articles, the CV, the 404 page, RSS, themes, keyboard focus, Mermaid, and mobile layout.
+Prove the built static site in a real Chromium browser. The `site` suite covers both locales, every article and pagination route, the CV, the 404 page, RSS, themes, keyboard focus, Mermaid, and mobile layout.
 
 ## Launch
 
@@ -16,7 +16,7 @@ From the repository root, run:
 node scripts/verify.mjs --suite site --port 4321
 ```
 
-The `site` suite runs `astro build`, starts the built site with `astro preview --host 0.0.0.0 --port 4321 --ignore-lock`, and drives it through the container. It refuses an occupied port and only stops the child PID it started. Change `--port` to choose a different port; `BASE_URL` and `PORT` are also accepted. The browser URL defaults to `http://host.docker.internal:<port>`.
+The `site` suite builds published articles plus `tests/fixtures/articles` with `VERIFY_ARTICLE_FIXTURES=1` into `artifacts/verification/<runId>/site`. It previews this isolated build and drives it through the container without overwriting the public `dist` output. It refuses an occupied port and only stops the child PID it started. Change `--port` to choose a different port; `BASE_URL` and `PORT` are also accepted. The browser URL defaults to `http://host.docker.internal:<port>`.
 
 The `foundation` suite still exists as a quick scaffold check; it serves the dev server and checks only app identity, title, heading, and keyboard focus. Use `site` for anything user-visible.
 
@@ -37,13 +37,13 @@ A completed run has already stopped its server, so run the doctor while the run 
 The host copies `scripts/verify-browser.cjs` into `/tmp/alexkutkin-personal-site-<runId>/` in the container. The site suite checks:
 
 - root redirect by saved locale, browser language, and the no-JavaScript locale links;
-- ten notes on page 1, one on page 2, localized dates, pagination, and identical article slugs in both locales;
+- ten notes per full page, the remaining notes on the last page, localized dates, pagination, and identical article slugs in both locales;
 - every route for document language, title, description, app identity, one visible H1, Open Graph, canonical URL, RSS link, footer, skip link, and images;
 - home contacts and projects, CV sections, the complex article (nested lists, quote, table, figure, long link, code, valid and broken Mermaid), and the custom 404;
-- language switch keeping the current page and slug, theme choice persistence, keyboard focus outlines, mobile overflow, and RSS full text;
+- language switch keeping the current page and slug, theme choice persistence, visible Mermaid color changes, keyboard focus outlines, mobile overflow, and RSS full text;
 - an internal-link audit plus screenshots and an ARIA snapshot.
 
-Failures collect in `report.json` and the process exits non-zero.
+`scripts/article-inventory.mjs` reads expected slugs from the published and fixture source directories. The host passes them to the browser in `content-manifest.json`; listings, routes, and RSS must match this independent input exactly. Failures, including unhandled page JavaScript errors, collect in `report.json` and the process exits non-zero.
 
 ## Evidence
 

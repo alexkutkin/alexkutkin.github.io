@@ -11,6 +11,8 @@ const options = Object.fromEntries(process.argv.slice(2).map((arg) => {
 const baseUrl = options["base-url"] ?? "http://host.docker.internal:4321";
 const artifactDir = options["artifact-dir"] ?? "/tmp/personal-site-mobile";
 const browserName = options.browser ?? "webkit";
+const articleSlug = options["article-slug"] ?? "why-i-built-pastehatch";
+assert.match(articleSlug, /^[a-z0-9]+(?:-[a-z0-9]+)*$/, "Invalid article slug");
 assert.ok(["webkit", "chromium"].includes(browserName), "Unsupported browser");
 fs.mkdirSync(artifactDir, { recursive: true });
 
@@ -84,7 +86,7 @@ async function main() {
           }
           await page.locator(`.language-switch a[hreflang="${lang === "en" ? "ru" : "en"}"]`).click();
           await page.waitForURL(`**/${lang === "en" ? "ru" : "en"}/`);
-          for (const route of [`/${lang}/cv/`, `/${lang}/article/why-i-built-pastehatch/`]) {
+          for (const route of [`/${lang}/cv/`, `/${lang}/article/${articleSlug}/`]) {
             await page.goto(new URL(route, baseUrl).href, { waitUntil: "networkidle" });
             assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), `${label}: overflow at ${route}`);
           }

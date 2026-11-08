@@ -2,19 +2,19 @@
 import { Image } from "astro:assets";
 import { render, type CollectionEntry } from "astro:content";
 import BaseLayout from "../layouts/BaseLayout.astro";
+import ArticleDate from "./ArticleDate.astro";
 import Icon from "./Icon.astro";
-import type { Dictionary, Locale } from "../i18n";
+import { getDictionary } from "../i18n";
 import "../styles/article.css";
 
 interface Props {
   entry: CollectionEntry<"articles">;
-  lang: Locale;
-  t: Dictionary;
 }
 
-const { entry, lang, t } = Astro.props;
+const { entry } = Astro.props;
+const lang = entry.data.lang;
+const t = getDictionary(lang);
 const { Content } = await render(entry);
-const isoDate = entry.data.date.toISOString().slice(0, 10);
 const assets = import.meta.glob("../assets/*.{jpg,jpeg,png,webp}", {
   eager: true,
   import: "default",
@@ -33,9 +33,7 @@ const title = `${entry.data.title} — ${t.authorName}`;
     </a>
 
     <header class="article__header">
-      <time class="article__date" datetime={isoDate} data-format-date data-locale={lang}>
-        {isoDate}
-      </time>
+      <ArticleDate class="article__date" date={entry.data.date} lang={lang} />
       <h1 class="article__title">{entry.data.title}</h1>
       <p class="article__lead">{entry.data.description}</p>
     </header>
@@ -61,6 +59,8 @@ const title = `${entry.data.title} — ${t.authorName}`;
 </BaseLayout>
 
 <script>
+  import { themeChangeEvent } from "../lib/theme";
+
   const blocks = Array.from(
     document.querySelectorAll('pre[data-language="mermaid"]'),
   );
@@ -135,7 +135,7 @@ const title = `${entry.data.title} — ${t.authorName}`;
       }
     }
 
-    document.addEventListener("themechange", async () => {
+    document.addEventListener(themeChangeEvent, async () => {
       const diagrams = Array.from(
         document.querySelectorAll(".mermaid-diagram[data-mermaid-source]"),
       );

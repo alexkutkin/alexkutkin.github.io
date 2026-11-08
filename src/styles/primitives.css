@@ -6,7 +6,7 @@
 
 .center {
   box-sizing: border-box;
-  width: min(var(--center-max, var(--content-max)), 100%);
+  width: min(var(--content-max), 100%);
   margin-inline: auto;
   padding-inline: var(--page-margin);
 }
@@ -14,7 +14,7 @@
 .icon {
   display: inline-flex;
   align-items: center;
-  gap: var(--icon-space, 0.5em);
+  gap: 0.5em;
 }
 
 .icon > svg {

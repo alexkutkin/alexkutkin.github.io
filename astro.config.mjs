@@ -1,8 +1,9 @@
 import { defineConfig } from "astro/config";
 import sitemap from "@astrojs/sitemap";
+import { siteUrl, locales, defaultLocale } from "./src/site";
 
 export default defineConfig({
-  site: "https://alexkutkin.com",
+  site: siteUrl,
   integrations: [sitemap({
     filter: (page) => new URL(page).pathname !== "/404.html",
   })],
@@ -12,8 +13,8 @@ export default defineConfig({
   },
   trailingSlash: "always",
   i18n: {
-    defaultLocale: "en",
-    locales: ["en", "ru"],
+    defaultLocale,
+    locales: [...locales],
     routing: {
       prefixDefaultLocale: true,
     },

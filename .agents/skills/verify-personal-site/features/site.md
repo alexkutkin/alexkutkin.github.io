@@ -1,16 +1,16 @@
 # Site routes and content
 
-The built site has a root redirect, two localized homes, pagination, eleven articles per locale, a CV per locale, RSS feeds, and one English 404 page. Both locales share the same article slugs.
+The built site has a root redirect, two localized homes, pagination, articles, a CV per locale, RSS feeds, and one English 404 page. Both locales share the same article slugs. The verification build includes published articles and fixtures; the production build includes only published articles.
 
 ## Sub-features
 
 - `root-redirect`: saved locale wins; otherwise a Russian browser goes to `/ru/`, any other language to `/en/`; without JavaScript the root shows both locale links.
-- `home`: each home lists ten notes, page 2 lists the remaining one, dates use the locale format, and pagination marks the current page.
+- `home`: full pages list ten notes, the final page lists the remainder, dates use the locale format, and pagination marks the current page.
 - `article`: every article renders localized metadata, body, and an optional figure; the complex article adds nested lists, a quote, a scrolling table, a long link, a scrolling code block, and one valid plus one broken Mermaid diagram.
 - `cv`: each CV shows experience, education, skills, and languages from Markdown, with no language switch on the 404 page.
 - `navigation`: the header marks the current section, the language switch keeps the current page and slug, and the skip link reaches `main`.
 - `themes`: system, light, and dark persist across pages and re-render Mermaid.
-- `feeds`: each locale publishes an RSS feed with eleven full-text items.
+- `feeds`: each locale publishes an RSS feed containing exactly the expected article slugs and full text.
 - `not-found`: `/404.html` returns the custom page; missing routes return HTTP 404.
 
 ## Preconditions
@@ -23,7 +23,7 @@ The built site has a root redirect, two localized homes, pagination, eleven arti
 
 The browser visits every route, then reads document metadata, visible text, links, images, and computed layout. It also changes locale and theme through the visible controls, presses Tab, waits for Mermaid to render and for the broken diagram to preserve its source, and resizes to a mobile viewport to detect horizontal overflow.
 
-Observable proof is `browser/report.json` (599 checks on the current site), `browser/screenshots/`, `browser/aria-snapshot.txt`, and `browser/trace.zip`. The report also records the internal-link audit, console errors, and page errors.
+Observable proof is `browser/report.json`, `browser/screenshots/`, `browser/aria-snapshot.txt`, and `browser/trace.zip`. The report also records the internal-link audit, console errors, and page errors. `content-manifest.json` records the independent source inventory used for exact listing, route, and feed checks.
 
 ## Gotchas
 

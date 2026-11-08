@@ -1,6 +1,7 @@
 import { defineCollection } from "astro:content";
 import { glob } from "astro/loaders";
 import { z } from "astro/zod";
+import { locales } from "./site";
 
 const articles = defineCollection({
   loader: glob({
@@ -10,7 +11,7 @@ const articles = defineCollection({
     base: ".",
   }),
   schema: z.object({
-    lang: z.enum(["en", "ru"]),
+    lang: z.enum(locales),
     title: z.string(),
     description: z.string(),
     date: z.coerce.date(),
@@ -24,7 +25,7 @@ const articles = defineCollection({
 const cv = defineCollection({
   loader: glob({ pattern: "*.md", base: "./src/content/cv" }),
   schema: z.object({
-    lang: z.enum(["en", "ru"]),
+    lang: z.enum(locales),
     label: z.string(),
     title: z.string(),
     subtitle: z.string(),
