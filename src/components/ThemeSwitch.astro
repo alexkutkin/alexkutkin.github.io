@@ -70,9 +70,30 @@ const { labels, label } = Astro.props;
     syncThemeInputs();
     document.dispatchEvent(new CustomEvent(themeChangeEvent));
   };
+  const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+  let activeTransition: ViewTransition | undefined;
+  let latestThemeRequest = 0;
+  const changeTheme = (mode: string) => {
+    const request = ++latestThemeRequest;
+    activeTransition?.skipTransition();
+    activeTransition = undefined;
+    if (reducedMotion.matches || !document.startViewTransition) {
+      applyTheme(mode);
+      return;
+    }
+    const transition = document.startViewTransition(() => {
+      if (request === latestThemeRequest) applyTheme(mode);
+    });
+    activeTransition = transition;
+    // Visual transitions may be skipped; finished still reports failed theme updates.
+    void transition.ready.catch(() => {});
+    void transition.finished.then(() => {
+      if (activeTransition === transition) activeTransition = undefined;
+    });
+  };
   for (const input of themeInputs) {
     input.addEventListener("change", () => {
-      if (input.checked) applyTheme(input.value);
+      if (input.checked) changeTheme(input.value);
     });
   }
   const colorScheme = window.matchMedia("(prefers-color-scheme: dark)");

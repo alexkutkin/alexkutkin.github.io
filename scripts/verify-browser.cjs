@@ -498,6 +498,7 @@ async function runSite({ browser, baseUrl, artifactDir, report, expectedArticles
     }));
     check("Dark theme survives a reload", reloadedDark.attr === "dark" && reloadedDark.background === darkState.background, JSON.stringify(reloadedDark));
     await page.locator('.theme-switch__option:has(input[value="light"])').click();
+    await page.waitForFunction(() => document.documentElement.getAttribute("data-theme") === "light");
     const lightState = await page.evaluate(() => ({
       attr: document.documentElement.getAttribute("data-theme"),
       background: getComputedStyle(document.body).backgroundColor,

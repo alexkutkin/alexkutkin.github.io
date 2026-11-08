@@ -235,6 +235,31 @@ p {
   --icon-size: 1rem;
 }
 
+@media (hover: hover) {
+  .theme-switch__option:hover,
+  .theme-switch__option:has(input:checked):hover,
+  .theme-control__toggle:hover {
+    background: color-mix(in srgb, var(--color-text) 8%, var(--color-surface));
+    color: var(--color-text);
+  }
+
+  .theme-control__toggle:hover {
+    border-color: var(--color-muted);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  ::view-transition-group(root) {
+    animation-duration: 180ms;
+    animation-timing-function: ease;
+  }
+
+  .theme-switch__option,
+  .theme-control__toggle {
+    transition: background-color 140ms ease, color 140ms ease, border-color 140ms ease;
+  }
+}
+
 .site-footer {
   margin-block-start: var(--section-space);
   padding-block: var(--space-lg) var(--space-xl);
@@ -329,6 +354,12 @@ p {
     z-index: 5;
     background: var(--color-card);
     box-shadow: var(--shadow-card);
+  }
+
+  .theme-control__toggle[aria-expanded="true"] {
+    background: var(--color-surface);
+    border-color: var(--color-muted);
+    color: var(--color-text);
   }
 
   .theme-control__toggle[aria-expanded="true"] + .theme-switch {
