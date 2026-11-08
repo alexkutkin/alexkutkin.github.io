@@ -29,14 +29,19 @@ const t = getDictionary("en");
 
   .not-found__title {
     margin: var(--space-sm) 0 0;
-    font-family: var(--font-sans);
-    font-size: var(--text-3xl);
-    line-height: 1.12;
+    font-family: var(--font-display);
+    font-size: var(--text-article);
+    font-optical-sizing: auto;
+    font-weight: 400;
+    letter-spacing: -0.04em;
+    line-height: 1.15;
   }
 
   .not-found__body {
     margin: var(--space-sm) 0 0;
     color: var(--color-muted);
+    font-size: var(--text-prose);
+    line-height: 1.7;
   }
 
   .not-found__link {

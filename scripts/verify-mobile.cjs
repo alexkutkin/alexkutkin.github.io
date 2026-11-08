@@ -18,7 +18,7 @@ async function main() {
   const browser = await ({ chromium, webkit })[browserName].launch({ headless: true });
   const results = [];
   try {
-    for (const width of [320, 375, 390, 430]) {
+    for (const width of [320, 375, 390, 430, 768]) {
       for (const lang of ["en", "ru"]) {
         for (const colorScheme of ["light", "dark"]) {
           const context = await browser.newContext({
@@ -34,8 +34,8 @@ async function main() {
               const box = document.querySelector(selector).getBoundingClientRect();
               return { left: box.left, right: box.right, top: box.top, bottom: box.bottom };
             };
-            const hero = document.querySelector(".home-hero");
-            const rule = hero.nextElementSibling;
+            const notes = document.querySelector(".home-notes");
+            const contacts = document.querySelector(".home-contacts");
             return {
               width: innerWidth,
               scrollWidth: document.documentElement.scrollWidth,
@@ -46,8 +46,9 @@ async function main() {
               theme: rect(".theme-control__toggle"),
               text: rect(".home-hero__text"),
               photo: rect(".home-hero__aside"),
-              heroGap: parseFloat(getComputedStyle(hero).rowGap),
-              sectionGap: parseFloat(getComputedStyle(rule).marginBlockStart),
+              notes: rect(".home-notes"),
+              contacts: rect(".home-contacts"),
+              notesBeforeContacts: Boolean(notes.compareDocumentPosition(contacts) & Node.DOCUMENT_POSITION_FOLLOWING),
             };
           });
           const label = `${browserName}-${lang}-${width}-${colorScheme}`;
@@ -59,7 +60,7 @@ async function main() {
           assert.ok(Math.abs(layout.theme.right - layout.header.right) <= 1, `${label}: theme not aligned right`);
           assert.ok(Math.abs(layout.language.right - layout.header.right) <= 1, `${label}: language not aligned right`);
           assert.ok(Math.abs(layout.navigation.top - layout.language.top) <= 1, `${label}: navigation and languages not on one row`);
-          assert.ok(layout.header.bottom - layout.header.top <= 100, `${label}: header exceeds two compact rows`);
+          assert.ok(layout.navigation.top >= Math.max(layout.brand.bottom, layout.theme.bottom) - 1, `${label}: header navigation overlaps the brand or theme control`);
           const toggle = page.locator(".theme-control__toggle");
           await toggle.click();
           await page.locator('.theme-switch__option:has(input[value="dark"])').click();
@@ -72,8 +73,9 @@ async function main() {
             localStorage.setItem("theme", scheme);
             document.documentElement.dataset.theme = scheme;
           }, colorScheme);
-          assert.ok(Math.abs(layout.photo.top - layout.text.bottom - layout.heroGap) <= 1, `${label}: unexpected photo gap`);
-          assert.ok(layout.heroGap >= 32 && layout.heroGap <= 40 && layout.sectionGap >= 32 && layout.sectionGap <= 40, `${label}: photo spacing is outside the chosen scale step`);
+          assert.ok(layout.photo.top >= layout.text.bottom - 1, `${label}: portrait overlaps the introductory text`);
+          assert.ok(layout.photo.left >= 0 && layout.photo.right <= width + 1, `${label}: portrait exceeds the viewport`);
+          assert.ok(layout.notesBeforeContacts && layout.contacts.top >= layout.notes.bottom - 1, `${label}: notes do not precede contacts in reading order`);
 
           if (width === 390) {
             await page.locator(".theme-control__toggle").blur();
@@ -92,7 +94,7 @@ async function main() {
       }
     }
     fs.writeFileSync(path.join(artifactDir, "report.json"), `${JSON.stringify({ browser: browserName, device: "iPhone 13 emulation with narrow-screen variants", results, status: "passed" }, null, 2)}\n`);
-    console.log(`${browserName}: ${results.length} mobile configurations passed; home, CV, article, language switch and photo spacing checked`);
+    console.log(`${browserName}: ${results.length} mobile configurations passed; home, CV, article, language switch, reading order and portrait layout checked`);
   } finally {
     await browser.close();
   }

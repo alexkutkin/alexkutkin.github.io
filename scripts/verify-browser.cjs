@@ -136,7 +136,8 @@ async function runSite({ browser, baseUrl, artifactDir, report }) {
   const ariaPath = path.join(artifactDir, "aria-snapshot.txt");
   const currentYear = String(new Date().getFullYear());
   const expectedAppName = process.env.VERIFY_EXPECTED_APP_NAME ?? "Alex Kutkin personal site";
-  const expectedOrigin = "https://alexkutkin.github.io";
+  const expectedOrigin = "https://alexkutkin.com";
+  const expectedArticleCount = 13;
   const checks = report.checks;
   const check = (name, passed, detail) => {
     checks.push({ name, passed: Boolean(passed), detail });
@@ -215,8 +216,11 @@ async function runSite({ browser, baseUrl, artifactDir, report }) {
     for (const lang of ["en", "ru"]) {
       const home = lang === "en" ? "/en/" : "/ru/";
       const second = lang === "en" ? "/en/2/" : "/ru/2/";
-      const expectedDate = lang === "en" ? "10/26/2026" : "26.10.2026";
       await page.goto(absolute(home), { waitUntil: "domcontentloaded" });
+      const firstDate = await page.locator("time[data-format-date]").first().getAttribute("datetime");
+      assert.match(firstDate ?? "", /^\d{4}-\d{2}-\d{2}$/);
+      const expectedDate = new Intl.DateTimeFormat(lang === "en" ? "en-US" : "ru-RU", { timeZone: "UTC" })
+        .format(new Date(`${firstDate}T00:00:00Z`));
       await page.waitForFunction(
         (date) => document.querySelector("time[data-format-date]")?.textContent?.trim() === date,
         expectedDate,
@@ -243,13 +247,13 @@ async function runSite({ browser, baseUrl, artifactDir, report }) {
         current: [...document.querySelectorAll(".pagination a[aria-current='page']")].map((link) => link.textContent.trim()),
         links: [...document.querySelectorAll("ol.note-list a[href*=\"/article/\"]")].map((link) => new URL(link.href).pathname),
       }));
-      check(`${second} lists the remaining notes`, secondPage.notes === 2, `notes=${secondPage.notes}`);
+      check(`${second} lists the remaining notes`, secondPage.notes === expectedArticleCount - 10, `notes=${secondPage.notes}`);
       check(`${second} marks page 2 as current`, secondPage.current.join(",") === "2", secondPage.current.join(","));
       for (const articlePath of secondPage.links) articlePaths[lang].add(articlePath);
       if (lang === "en") await capture("notes-page-2", page, { fullPage: true });
     }
-    check("English notes expose twelve article links", articlePaths.en.size === 12, `${articlePaths.en.size} links`);
-    check("Russian notes expose twelve article links", articlePaths.ru.size === 12, `${articlePaths.ru.size} links`);
+    check(`English notes expose ${expectedArticleCount} article links`, articlePaths.en.size === expectedArticleCount, `${articlePaths.en.size} links`);
+    check(`Russian notes expose ${expectedArticleCount} article links`, articlePaths.ru.size === expectedArticleCount, `${articlePaths.ru.size} links`);
     const enSlugs = [...articlePaths.en].map(slugOf).sort();
     const ruSlugs = [...articlePaths.ru].map(slugOf).sort();
     check("Both locales use the same article slugs", enSlugs.join(",") === ruSlugs.join(","), `${enSlugs.join(",")} vs ${ruSlugs.join(",")}`);
@@ -462,28 +466,43 @@ async function runSite({ browser, baseUrl, artifactDir, report }) {
     const systemState = await page.evaluate(() => ({
       attr: document.documentElement.getAttribute("data-theme"),
       background: getComputedStyle(document.body).backgroundColor,
+      scheme: getComputedStyle(document.documentElement).colorScheme,
+      selected: document.querySelector('input[name="theme"]:checked')?.value,
     }));
-    check("Theme defaults to the system preference", systemState.attr === null && systemState.background === "rgb(247, 242, 232)", JSON.stringify(systemState));
+    check("Theme defaults to the system preference", systemState.attr === null && systemState.scheme === "light" && systemState.selected === "system", JSON.stringify(systemState));
     await page.locator('.theme-switch__option:has(input[value="dark"])').click();
     await page.waitForFunction(() => document.documentElement.getAttribute("data-theme") === "dark");
     const darkState = await page.evaluate(() => ({
       attr: document.documentElement.getAttribute("data-theme"),
       background: getComputedStyle(document.body).backgroundColor,
       stored: localStorage.getItem("theme"),
+      scheme: getComputedStyle(document.documentElement).colorScheme,
+      selected: document.querySelector('input[name="theme"]:checked')?.value,
     }));
-    check("Explicit dark theme applies and persists", darkState.attr === "dark" && darkState.background === "rgb(23, 25, 31)" && darkState.stored === "dark", JSON.stringify(darkState));
+    check("Explicit dark theme applies and persists", darkState.attr === "dark" && darkState.scheme === "dark" && darkState.background !== systemState.background && darkState.stored === "dark" && darkState.selected === "dark", JSON.stringify(darkState));
     await capture("theme-dark", page, { fullPage: true });
     await page.reload({ waitUntil: "domcontentloaded" });
-    check("Dark theme survives a reload", (await page.evaluate(() => document.documentElement.getAttribute("data-theme"))) === "dark", "data-theme after reload");
+    const reloadedDark = await page.evaluate(() => ({
+      attr: document.documentElement.getAttribute("data-theme"),
+      background: getComputedStyle(document.body).backgroundColor,
+    }));
+    check("Dark theme survives a reload", reloadedDark.attr === "dark" && reloadedDark.background === darkState.background, JSON.stringify(reloadedDark));
+    await page.locator('.theme-switch__option:has(input[value="light"])').click();
+    const lightState = await page.evaluate(() => ({
+      attr: document.documentElement.getAttribute("data-theme"),
+      background: getComputedStyle(document.body).backgroundColor,
+      stored: localStorage.getItem("theme"),
+    }));
+    check("Explicit light theme applies and persists", lightState.attr === "light" && lightState.background === systemState.background && lightState.stored === "light", JSON.stringify(lightState));
     await page.locator('.theme-switch__option:has(input[value="system"])').click();
     await page.waitForFunction(() => !document.documentElement.hasAttribute("data-theme"));
     check("System theme clears the explicit choice", (await page.evaluate(() => localStorage.getItem("theme"))) === null, "theme storage after system");
     await page.emulateMedia({ colorScheme: "dark" });
     await page.waitForTimeout(150);
-    check("System theme follows a dark preference", (await page.evaluate(() => getComputedStyle(document.body).backgroundColor)) === "rgb(23, 25, 31)", "dark system background");
+    check("System theme follows a dark preference", (await page.evaluate(() => getComputedStyle(document.body).backgroundColor)) === darkState.background, "dark system background matches the explicit dark theme");
     await page.emulateMedia({ colorScheme: "light" });
     await page.waitForTimeout(150);
-    check("System theme follows a light preference", (await page.evaluate(() => getComputedStyle(document.body).backgroundColor)) === "rgb(247, 242, 232)", "light system background");
+    check("System theme follows a light preference", (await page.evaluate(() => getComputedStyle(document.body).backgroundColor)) === systemState.background, "light system background matches the initial light theme");
     report.actions.push({ action: "Exercise system, dark and light themes", result: "default, persistence, clearing and prefers-color-scheme verified" });
 
     // Keyboard focus.
@@ -572,18 +591,50 @@ async function runSite({ browser, baseUrl, artifactDir, report }) {
     const mobileCv = await overflow(mobile);
     check("Mobile CV has no horizontal page overflow", mobileCv.scrollWidth <= mobileCv.innerWidth + 1 && mobileCv.bodyWidth <= mobileCv.innerWidth + 1, JSON.stringify(mobileCv));
     await capture("mobile-cv", mobile, { fullPage: true });
+    for (const width of [320, 390, 768]) {
+      await mobile.setViewportSize({ width, height: 844 });
+      for (const lang of ["en", "ru"]) {
+        for (const route of [`/${lang}/`, `/${lang}/cv/`, `/${lang}/article/one-article-many-layouts/`]) {
+          await mobile.goto(absolute(route), { waitUntil: "domcontentloaded" });
+          await mobile.evaluate(() => document.fonts.ready);
+          if (route.includes("/article/")) {
+            await mobile.waitForSelector(".mermaid-diagram svg", { state: "visible", timeout: 20000 });
+          }
+          const layout = await overflow(mobile);
+          check(`${route} fits a ${width}px viewport`, layout.scrollWidth <= width + 1 && layout.bodyWidth <= width + 1, JSON.stringify(layout));
+          if (route === `/${lang}/`) {
+            const readingOrder = await mobile.evaluate(() => {
+              const notes = document.querySelector(".home-notes");
+              const contacts = document.querySelector(".home-contacts");
+              return {
+                domOrder: Boolean(notes.compareDocumentPosition(contacts) & Node.DOCUMENT_POSITION_FOLLOWING),
+                notesBottom: notes.getBoundingClientRect().bottom,
+                contactsTop: contacts.getBoundingClientRect().top,
+              };
+            });
+            check(`${route} puts notes before contacts at ${width}px`, readingOrder.domOrder && readingOrder.contactsTop >= readingOrder.notesBottom - 1, JSON.stringify(readingOrder));
+            const targets = await mobile.locator(".site-nav__link, .language-switch__link, .theme-control__toggle").evaluateAll((elements) => elements.map((element) => {
+              const box = element.getBoundingClientRect();
+              return { text: element.getAttribute("aria-label") || element.textContent.trim(), width: box.width, height: box.height };
+            }));
+            check(`${route} keeps header touch targets at least 44px at ${width}px`, targets.length === 5 && targets.every((target) => target.width >= 44 && target.height >= 44), JSON.stringify(targets));
+            if (width === 390) await capture(`mobile-home-${lang}`, mobile, { fullPage: true });
+          }
+        }
+      }
+    }
     await mobile.close();
-    report.actions.push({ action: "Resize to 375px and inspect home, article and CV", result: { mobileHome, mobileArticle, mobileCv, blockOverflow } });
+    report.actions.push({ action: "Inspect home, article and CV at 320px, 375px, 390px and 768px in both locales", result: { mobileHome, mobileArticle, mobileCv, blockOverflow } });
 
     // RSS feeds.
     const feedEn = await context.request.get(absolute("/en/rss.xml"));
     const feedEnText = await feedEn.text();
     check("English RSS responds with XML", feedEn.status() === 200 && (feedEn.headers()["content-type"] ?? "").includes("xml"), `HTTP ${feedEn.status()} ${feedEn.headers()["content-type"]}`);
-    check("English RSS has twelve items and full article text", (feedEnText.match(/<item>/g) ?? []).length === 12 && feedEnText.includes("<language>en</language>") && feedEnText.includes("The first draft of a feature"), `items=${(feedEnText.match(/<item>/g) ?? []).length}`);
+    check(`English RSS has ${expectedArticleCount} items and full article text`, (feedEnText.match(/<item>/g) ?? []).length === expectedArticleCount && feedEnText.includes("<language>en</language>") && feedEnText.includes("The first draft of a feature"), `items=${(feedEnText.match(/<item>/g) ?? []).length}`);
     const feedRu = await context.request.get(absolute("/ru/rss.xml"));
     const feedRuText = await feedRu.text();
     check("Russian RSS responds with XML", feedRu.status() === 200 && (feedRu.headers()["content-type"] ?? "").includes("xml"), `HTTP ${feedRu.status()} ${feedRu.headers()["content-type"]}`);
-    check("Russian RSS has twelve items and full article text", (feedRuText.match(/<item>/g) ?? []).length === 12 && feedRuText.includes("<language>ru</language>") && feedRuText.includes("Первый черновик функции"), `items=${(feedRuText.match(/<item>/g) ?? []).length}`);
+    check(`Russian RSS has ${expectedArticleCount} items and full article text`, (feedRuText.match(/<item>/g) ?? []).length === expectedArticleCount && feedRuText.includes("<language>ru</language>") && feedRuText.includes("Первый черновик функции"), `items=${(feedRuText.match(/<item>/g) ?? []).length}`);
     report.actions.push({ action: "Read both RSS feeds", result: { en: feedEn.status(), ru: feedRu.status() } });
 
     // Internal link audit.

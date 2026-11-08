@@ -50,55 +50,23 @@ const notes = page.data.map((entry) => ({
       </div>
     </section>
 
-    <hr class="home-rule" />
-
-    <section class="home-about" aria-label={t.home.projectsLabel}>
-      <div class="home-projects">
-        <p class="section-label">{t.home.projectsLabel}</p>
-        <div class="project-list">
-          {
-            t.home.projects.map((project) => (
-              <article class="project">
-                <h2 class="project__title">{project.title}</h2>
-                <p class="project__description">{project.description}</p>
-                <a class="project__link" href={project.href}>
-                  <Icon name="github" />
-                  <span>{project.linkLabel}</span>
-                </a>
-              </article>
-            ))
-          }
-        </div>
-      </div>
-
-      <div class="home-contacts">
-        <div class="contact-group">
-          <p class="section-label">{t.home.contactLabel}</p>
-          <p class="contact-intro">{t.home.contactIntro}</p>
-          <a class="contact-link" href="https://t.me/alxt">
-            <Icon name="telegram" />
-            <span>{t.home.telegram}</span>
-          </a>
-          <a class="contact-link" href="mailto:hi@alexkutkin.com">
-            <Icon name="mail" />
-            <span>hi@alexkutkin.com</span>
-          </a>
-        </div>
-        <div class="contact-group">
-          <p class="section-label">{t.home.socialsLabel}</p>
-          <a class="contact-social" href="https://github.com/alexkutkin">
-            <Icon name="github" />
-            <span>GitHub</span>
-          </a>
-          <a class="contact-social" href="https://x.com/alex_kutkin">
-            <Icon name="x" />
-            <span>X</span>
-          </a>
-        </div>
+    <section class="home-projects" aria-label={t.home.projectsLabel}>
+      <p class="section-label">{t.home.projectsLabel}</p>
+      <div class="project-list">
+        {
+          t.home.projects.map((project) => (
+            <article class="project">
+              <h2 class="project__title">{project.title}</h2>
+              <p class="project__description">{project.description}</p>
+              <a class="project__link" href={project.href}>
+                <Icon name="github" />
+                <span>{project.linkLabel}</span>
+              </a>
+            </article>
+          ))
+        }
       </div>
     </section>
-
-    <hr class="home-rule" />
 
     <section class="home-notes" aria-labelledby="notes-title">
       <h2 id="notes-title" class="home-notes__title">{t.home.notesTitle}</h2>
@@ -122,6 +90,32 @@ const notes = page.data.map((entry) => ({
         lang={lang}
         t={t}
       />
+    </section>
+
+    <section class="home-contacts" aria-label={t.home.contactLabel}>
+      <div class="contact-group">
+        <p class="section-label">{t.home.contactLabel}</p>
+        <p class="contact-intro">{t.home.contactIntro}</p>
+        <a class="contact-link" href="https://t.me/alxt">
+          <Icon name="telegram" />
+          <span>{t.home.telegram}</span>
+        </a>
+        <a class="contact-link" href="mailto:hi@alexkutkin.com">
+          <Icon name="mail" />
+          <span>hi@alexkutkin.com</span>
+        </a>
+      </div>
+      <div class="contact-group">
+        <p class="section-label">{t.home.socialsLabel}</p>
+        <a class="contact-social" href="https://github.com/alexkutkin">
+          <Icon name="github" />
+          <span>GitHub</span>
+        </a>
+        <a class="contact-social" href="https://x.com/alex_kutkin">
+          <Icon name="x" />
+          <span>X</span>
+        </a>
+      </div>
     </section>
   </div>
 </BaseLayout>
