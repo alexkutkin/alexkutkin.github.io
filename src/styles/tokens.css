@@ -5,15 +5,15 @@
   --font-display: "Literata Variable", Georgia, "Times New Roman", serif;
   --font-mono: ui-monospace, "SFMono-Regular", Consolas, monospace;
 
-  --color-bg: #f8f6f1;
-  --color-surface: #efede7;
-  --color-card: #fffdf8;
-  --color-text: #292925;
-  --color-muted: #65645f;
-  --color-accent: #6b526d;
-  --color-border: #dcd8ce;
-  --color-on-accent: #fffdf8;
-  --shadow-card: 0 4px 20px rgb(41 41 37 / 0.08);
+  --color-bg: #f2f4f5;
+  --color-surface: #e7ecef;
+  --color-card: #fcfdfe;
+  --color-text: #222b33;
+  --color-muted: #505e68;
+  --color-accent: #36596b;
+  --color-border: #d3dce1;
+  --color-on-accent: #fcfdfe;
+  --shadow-card: 0 4px 20px rgb(34 43 51 / 0.08);
 
   /* Spacing: fixed small steps and fluid larger steps over 20rem–80rem. */
   --space-2xs: 0.25rem;
