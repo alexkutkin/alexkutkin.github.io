@@ -4,8 +4,9 @@ import Icon from "./Icon.astro";
 import NoteCard from "./NoteCard.astro";
 import Pagination from "./Pagination.astro";
 import PortraitCard from "./PortraitCard.astro";
-import type { Dictionary, Locale } from "../i18n";
+import { getDictionary, type Locale } from "../i18n";
 import { articleSlug, type ArticleEntry } from "../lib/articles";
+import { projects } from "../projects";
 import "../styles/home.css";
 
 interface PageData {
@@ -17,10 +18,10 @@ interface PageData {
 interface Props {
   page: PageData;
   lang: Locale;
-  t: Dictionary;
 }
 
-const { page, lang, t } = Astro.props;
+const { page, lang } = Astro.props;
+const t = getDictionary(lang);
 
 const notes = page.data.map((entry) => ({
   title: entry.data.title,
@@ -54,13 +55,13 @@ const notes = page.data.map((entry) => ({
       <p class="section-label">{t.home.projectsLabel}</p>
       <div class="project-list">
         {
-          t.home.projects.map((project) => (
+          projects.map((project) => (
             <article class="project">
               <h2 class="project__title">{project.title}</h2>
-              <p class="project__description">{project.description}</p>
+              <p class="project__description">{t.home.projects[project.id]}</p>
               <a class="project__link" href={project.href}>
                 <Icon name="github" />
-                <span>{project.linkLabel}</span>
+                <span>GitHub</span>
               </a>
             </article>
           ))
@@ -79,7 +80,6 @@ const notes = page.data.map((entry) => ({
               date={note.date}
               href={note.href}
               lang={lang}
-              t={t}
             />
           ))
         }
@@ -88,7 +88,6 @@ const notes = page.data.map((entry) => ({
         currentPage={page.currentPage}
         lastPage={page.lastPage}
         lang={lang}
-        t={t}
       />
     </section>
 

@@ -1,7 +1,6 @@
 import type { Dictionary } from "./en";
 
 export const ru: Dictionary = {
-  locale: "ru",
   authorName: "Александр Куткин",
   rssTitle: "Александр Куткин — заметки",
   nav: {
@@ -19,11 +18,6 @@ export const ru: Dictionary = {
     system: "Системная",
     light: "Светлая",
     dark: "Тёмная",
-  },
-  language: {
-    label: "Язык",
-    en: "Английский",
-    ru: "Русский",
   },
   footer: {
     site: "Личный сайт",
@@ -51,22 +45,10 @@ export const ru: Dictionary = {
     socialsLabel: "Профили",
     notesTitle: "Заметки",
     telegram: "Telegram",
-    projects: [
-      {
-        title: "PasteHatch",
-        description:
-          "Небольшая программа для Windows, чтобы собирать материалы для ИИ-агентов: файлы, скриншоты, текст и ссылки. Всё сохраняется в обычную папку.",
-        href: "https://github.com/alexkutkin/paste-hatch",
-        linkLabel: "GitHub",
-      },
-      {
-        title: "Herdr Tray",
-        description:
-          "Небольшая программа для Windows: показывает, какие ИИ-агенты в терминале Herdr работают, а какие ждут ответа. Можно открыть общую панель и следить за всеми сразу.",
-        href: "https://github.com/alexkutkin/herdr-tray",
-        linkLabel: "GitHub",
-      },
-    ],
+    projects: {
+      pasteHatch: "Небольшая программа для Windows, чтобы собирать материалы для ИИ-агентов: файлы, скриншоты, текст и ссылки. Всё сохраняется в обычную папку.",
+      herdrTray: "Небольшая программа для Windows: показывает, какие ИИ-агенты в терминале Herdr работают, а какие ждут ответа. Можно открыть общую панель и следить за всеми сразу.",
+    },
   },
   article: {
     backHome: "На главную",

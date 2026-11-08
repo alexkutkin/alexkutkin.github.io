@@ -1,0 +1,28 @@
+---
+import type { Locale } from "../i18n";
+
+interface Props {
+  date: Date;
+  lang: Locale;
+  class?: string;
+}
+
+const { date, lang, class: className } = Astro.props;
+const isoDate = date.toISOString().slice(0, 10);
+---
+
+<time class={className} datetime={isoDate} data-format-date data-locale={lang}>
+  {isoDate}
+</time>
+
+<script>
+  import { defaultLocale } from "../i18n";
+
+  for (const node of document.querySelectorAll<HTMLTimeElement>("[data-format-date]")) {
+    const isoDate = node.dateTime;
+    const locale = node.dataset.locale || defaultLocale;
+    node.textContent = new Intl.DateTimeFormat(locale, { timeZone: "UTC" }).format(
+      new Date(`${isoDate.slice(0, 10)}T00:00:00Z`),
+    );
+  }
+</script>

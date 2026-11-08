@@ -6,7 +6,8 @@ import "@fontsource-variable/literata/standard.css";
 
 import Footer from "../components/Footer.astro";
 import Header from "../components/Header.astro";
-import { getDictionary, locales, switchLocalePath, type Locale } from "../i18n";
+import SiteHead from "../components/SiteHead.astro";
+import { getDictionary, type Locale } from "../i18n";
 
 import "../styles/tokens.css";
 import "../styles/primitives.css";
@@ -31,47 +32,12 @@ const {
 } = Astro.props;
 
 const t = getDictionary(lang);
-const site = Astro.site ?? new URL("https://alexkutkin.github.io");
-const canonical = new URL(canonicalPath ?? Astro.url.pathname, site).href;
-const ogImage = new URL("/og.png", site).href;
-const ogLocale = lang === "ru" ? "ru_RU" : "en_US";
-const isLocalizedPage = /^\/(en|ru)\//.test(Astro.url.pathname);
-const fallbackPath = /^\/(en|ru)\/$/.test(Astro.url.pathname)
-  ? "/"
-  : switchLocalePath(Astro.url.pathname, "en");
 ---
 
 <!doctype html>
 <html lang={lang}>
   <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>{title}</title>
-    <meta name="description" content={description} />
-    {isLocalizedPage && <link rel="canonical" href={canonical} />}
-    {isLocalizedPage && locales.map((locale) => (
-      <link rel="alternate" hreflang={locale} href={new URL(switchLocalePath(Astro.url.pathname, locale), site).href} />
-    ))}
-    {isLocalizedPage && <link rel="alternate" hreflang="x-default" href={new URL(fallbackPath, site).href} />}
-    <link rel="sitemap" href="/sitemap-index.xml" />
-    <meta name="application-name" content="Alex Kutkin personal site" />
-    <meta name="color-scheme" content="light dark" />
-    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
-    <link
-      rel="alternate"
-      type="application/rss+xml"
-      title={t.rssTitle}
-      href={`/${lang}/rss.xml`}
-    />
-    <meta property="og:type" content="website" />
-    <meta property="og:title" content={title} />
-    <meta property="og:description" content={description} />
-    <meta property="og:image" content={ogImage} />
-    <meta property="og:image:width" content="1200" />
-    <meta property="og:image:height" content="630" />
-    <meta property="og:url" content={canonical} />
-    <meta property="og:site_name" content={t.authorName} />
-    <meta property="og:locale" content={ogLocale} />
+    <SiteHead lang={lang} title={title} description={description} canonicalPath={canonicalPath} rss />
     <script is:inline>
       (function () {
         try {
@@ -89,81 +55,11 @@ const fallbackPath = /^\/(en|ru)\/$/.test(Astro.url.pathname)
       lang={lang}
       section={section}
       pathname={Astro.url.pathname}
-      t={t}
       showLanguageSwitch={showLanguageSwitch}
     />
     <main id="main" class="page-main center">
       <slot />
     </main>
     <Footer t={t} />
-    <script>
-      const themeKey = "theme";
-      const root = document.documentElement;
-      const themeInputs = Array.from(
-        document.querySelectorAll('input[name="theme"]'),
-      );
-      const storedTheme = () => {
-        try {
-          return localStorage.getItem(themeKey) ?? "system";
-        } catch (error) {
-          return "system";
-        }
-      };
-      const syncThemeInputs = () => {
-        const mode = storedTheme();
-        for (const input of themeInputs) {
-          input.checked = input.value === mode;
-        }
-      };
-      const applyTheme = (mode) => {
-        if (mode === "system") {
-          root.removeAttribute("data-theme");
-          try {
-            localStorage.removeItem(themeKey);
-          } catch (error) {}
-        } else {
-          root.dataset.theme = mode;
-          try {
-            localStorage.setItem(themeKey, mode);
-          } catch (error) {}
-        }
-        syncThemeInputs();
-        document.dispatchEvent(new CustomEvent("themechange"));
-      };
-      for (const input of themeInputs) {
-        input.addEventListener("change", () => {
-          if (input.checked) applyTheme(input.value);
-        });
-      }
-      const colorScheme = window.matchMedia("(prefers-color-scheme: dark)");
-      colorScheme.addEventListener("change", () => {
-        if (storedTheme() === "system") {
-          document.dispatchEvent(new CustomEvent("themechange"));
-        }
-      });
-      syncThemeInputs();
-
-      for (const link of document.querySelectorAll("[data-set-locale]")) {
-        link.addEventListener("click", () => {
-          try {
-            localStorage.setItem("locale", link.dataset.setLocale);
-          } catch (error) {}
-        });
-      }
-
-      const dateFormatter = (locale) =>
-        new Intl.DateTimeFormat(locale, { timeZone: "UTC" });
-      for (const node of document.querySelectorAll("[data-format-date]")) {
-        const isoDate = node.getAttribute("datetime");
-        if (!isoDate) continue;
-        const locale = node.getAttribute("data-locale") || "en";
-        node.textContent = dateFormatter(locale).format(
-          new Date(`${isoDate.slice(0, 10)}T00:00:00Z`),
-        );
-      }
-    </script>
-    <script is:inline>
-      document.querySelectorAll("[data-year]").forEach(function (node) { node.textContent = String(new Date().getFullYear()); });
-    </script>
   </body>
 </html>

@@ -1,10 +1,10 @@
 import { getCollection, type CollectionEntry } from "astro:content";
-import type { Locale } from "../i18n";
+import { locales, type Locale } from "../site";
 
 export type ArticleEntry = CollectionEntry<"articles">;
 
 export function articleSlug(entry: ArticleEntry) {
-  return entry.id.split("/").pop() ?? entry.id;
+  return entry.id.slice(entry.id.lastIndexOf("/") + 1);
 }
 
 let pending: Promise<ArticleEntry[]> | undefined;
@@ -22,9 +22,9 @@ async function loadArticles() {
 
     for (const [key, group] of byKey) {
       const langs = group.map((entry) => entry.data.lang).sort().join(",");
-      if (langs !== "en,ru") {
+      if (langs !== [...locales].sort().join(",")) {
         throw new Error(
-          `translationKey "${key}" needs exactly one en and one ru article; found ${langs || "none"}`,
+          `translationKey "${key}" needs exactly one article per locale (${locales.join(", ")}); found ${langs || "none"}`,
         );
       }
 

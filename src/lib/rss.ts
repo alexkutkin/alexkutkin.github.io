@@ -3,6 +3,7 @@ import { render } from "astro:content";
 import { experimental_AstroContainer as AstroContainer } from "astro/container";
 import { getDictionary, type Locale } from "../i18n";
 import { articleSlug, getArticles } from "./articles";
+import { siteUrl } from "../site";
 
 export async function createArticleFeed(lang: Locale, site?: URL) {
   const t = getDictionary(lang);
@@ -25,7 +26,7 @@ export async function createArticleFeed(lang: Locale, site?: URL) {
   return rss({
     title: t.rssTitle,
     description: t.meta.homeDescription,
-    site: site ?? "https://alexkutkin.github.io",
+    site: site ?? siteUrl,
     items,
     customData: `<language>${lang}</language>`,
   });

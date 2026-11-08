@@ -1,14 +1,14 @@
 ---
-import type { Dictionary, Locale } from "../i18n";
+import { getDictionary, type Locale } from "../i18n";
 
 interface Props {
   currentPage: number;
   lastPage: number;
   lang: Locale;
-  t: Dictionary;
 }
 
-const { currentPage, lastPage, lang, t } = Astro.props;
+const { currentPage, lastPage, lang } = Astro.props;
+const t = getDictionary(lang);
 const pages = Array.from({ length: lastPage }, (_, index) => index + 1);
 const hrefFor = (page: number) => (page === 1 ? `/${lang}/` : `/${lang}/${page}/`);
 ---

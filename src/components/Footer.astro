@@ -14,3 +14,7 @@ const { t } = Astro.props;
     <p class="site-footer__site">{t.footer.site}</p>
   </div>
 </footer>
+
+<script is:inline>
+  document.querySelectorAll("[data-year]").forEach(function (node) { node.textContent = String(new Date().getFullYear()); });
+</script>

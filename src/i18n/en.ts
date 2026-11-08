@@ -1,5 +1,6 @@
+import type { ProjectId } from "../projects";
+
 export const en = {
-  locale: "en",
   authorName: "Alex Kutkin",
   rssTitle: "Alex Kutkin — notes",
   nav: {
@@ -17,11 +18,6 @@ export const en = {
     system: "System",
     light: "Light",
     dark: "Dark",
-  },
-  language: {
-    label: "Language",
-    en: "English",
-    ru: "Russian",
   },
   footer: {
     site: "Personal site",
@@ -49,22 +45,10 @@ export const en = {
     socialsLabel: "Profiles",
     notesTitle: "Notes",
     telegram: "Telegram",
-    projects: [
-      {
-        title: "PasteHatch",
-        description:
-          "A small Windows app for collecting materials for AI agents: files, screenshots, text and links. Everything is saved in an ordinary folder.",
-        href: "https://github.com/alexkutkin/paste-hatch",
-        linkLabel: "GitHub",
-      },
-      {
-        title: "Herdr Tray",
-        description:
-          "A small Windows app that shows which AI agents in the Herdr terminal are working and which are waiting for input. Open the shared status panel to keep an eye on them all at once.",
-        href: "https://github.com/alexkutkin/herdr-tray",
-        linkLabel: "GitHub",
-      },
-    ],
+    projects: {
+      pasteHatch: "A small Windows app for collecting materials for AI agents: files, screenshots, text and links. Everything is saved in an ordinary folder.",
+      herdrTray: "A small Windows app that shows which AI agents in the Herdr terminal are working and which are waiting for input. Open the shared status panel to keep an eye on them all at once.",
+    } satisfies Record<ProjectId, string>,
   },
   article: {
     backHome: "Home",

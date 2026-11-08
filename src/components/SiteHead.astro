@@ -1,0 +1,47 @@
+---
+import { getDictionary, locales, switchLocalePath, type Locale } from "../i18n";
+import { defaultLocale, siteUrl } from "../site";
+
+interface Props {
+  lang: Locale;
+  title: string;
+  description: string;
+  rss?: boolean;
+  canonicalPath?: string;
+}
+
+const { lang, title, description, rss = false, canonicalPath } = Astro.props;
+const t = getDictionary(lang);
+const site = Astro.site ?? new URL(siteUrl);
+const pathname = Astro.url.pathname;
+const isRoot = pathname === "/";
+const isLocalizedPage = locales.some((locale) => pathname.startsWith(`/${locale}/`));
+const canonical = new URL(canonicalPath ?? pathname, site).href;
+const fallbackPath = isRoot || locales.some((locale) => pathname === `/${locale}/`)
+  ? "/"
+  : switchLocalePath(pathname, defaultLocale);
+---
+
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>{title}</title>
+<meta name="description" content={description} />
+{(isRoot || isLocalizedPage) && <link rel="canonical" href={canonical} />}
+{(isRoot || isLocalizedPage) && locales.map((locale) => (
+  <link rel="alternate" hreflang={locale} href={new URL(switchLocalePath(pathname, locale), site).href} />
+))}
+{(isRoot || isLocalizedPage) && <link rel="alternate" hreflang="x-default" href={new URL(fallbackPath, site).href} />}
+<link rel="sitemap" href="/sitemap-index.xml" />
+<meta name="application-name" content="Alex Kutkin personal site" />
+<meta name="color-scheme" content="light dark" />
+<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+{rss && <link rel="alternate" type="application/rss+xml" title={t.rssTitle} href={`/${lang}/rss.xml`} />}
+<meta property="og:type" content="website" />
+<meta property="og:title" content={title} />
+<meta property="og:description" content={description} />
+<meta property="og:image" content={new URL("/og.png", site).href} />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta property="og:url" content={canonical} />
+<meta property="og:site_name" content={t.authorName} />
+<meta property="og:locale" content={lang === "ru" ? "ru_RU" : "en_US"} />

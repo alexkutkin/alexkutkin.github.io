@@ -1,16 +1,16 @@
 ---
 import { render, type CollectionEntry } from "astro:content";
 import BaseLayout from "../layouts/BaseLayout.astro";
-import type { Dictionary, Locale } from "../i18n";
+import { getDictionary } from "../i18n";
 import "../styles/cv.css";
 
 interface Props {
   entry: CollectionEntry<"cv">;
-  lang: Locale;
-  t: Dictionary;
 }
 
-const { entry, lang, t } = Astro.props;
+const { entry } = Astro.props;
+const lang = entry.data.lang;
+const t = getDictionary(lang);
 const { Content } = await render(entry);
 ---
 
